@@ -317,6 +317,9 @@ function openAuthModal() {
     <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
       <button class="btn" id="loginBtn">Войти</button>
       <button class="btn ghost" id="toggleVerify">У меня есть код</button>
+<button id="magicLinkBtn" class="btn-primary">
+  Войти по ссылке
+</button>
     </div>
 
     <div id="verifyBox" style="display:none; margin-top:12px;">
@@ -863,7 +866,7 @@ async function completeMagicLinkIfPresent() {
 completeMagicLinkIfPresent();
   // ===== BUTTON HANDLERS =====
 document.getElementById("magicLinkBtn")?.addEventListener("click", () => {
-  const email = document.getElementById("authEmail")?.value || "";
+  const email = document.getElementById("loginEmail")?.value || "";
 
   if (!email) {
     toast("Ошибка", "Введите email");
