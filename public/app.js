@@ -1,3 +1,4 @@
+
 import { auth, googleProvider } from "./firebase.js";
 import { 
   createUserWithEmailAndPassword, 
@@ -814,8 +815,63 @@ async function loginWithGoogle() {
     toast("Ошибка", error.message);
   }
 }
-  // ===== BUTTON HANDLERS =====
+// ===== EMAIL LINK (MAGIC LINK) AUTH =====
+const actionCodeSettings = {
+  url: "https://velora-ai-1.onrender.com", // можно потом сделать /auth
+  handleCodeInApp: true,
+};
 
+async function sendMagicLink(email) {
+  try {
+    await sendSignInLinkToEmail(auth, email, actionCodeSettings);
+    localStorage.setItem("emailForSignIn", email);
+    toast("Успех", "Ссылка отправлена на почту. Открой письмо и нажми на ссылку.");
+  } catch (error) {
+    console.error(error);
+    toast("Ошибка", error.code || error.message);
+  }
+}
+
+// Авто-логин если пользователь открыл сайт по ссылке из письма
+async function completeMagicLinkIfPresent() {
+  try {
+    const href = window.location.href;
+
+    if (!isSignInWithEmailLink(auth, href)) return;
+
+    let email = localStorage.getItem("emailForSignIn");
+    if (!email) {
+      email = prompt("Введите email для подтверждения входа:");
+    }
+
+    const result = await signInWithEmailLink(auth, email, href);
+
+    localStorage.removeItem("emailForSignIn");
+    state.user = result.user;
+
+    toast("Успех", "Вход выполнен по ссылке ✅");
+
+    // чтобы убрать параметры из URL (красиво)
+    window.history.replaceState({}, document.title, "/");
+  } catch (error) {
+    console.error(error);
+    toast("Ошибка", error.code || error.message);
+  }
+}
+
+// вызови при старте приложения
+completeMagicLinkIfPresent();
+  // ===== BUTTON HANDLERS =====
+document.getElementById("magicLinkBtn")?.addEventListener("click", () => {
+  const email = document.getElementById("authEmail")?.value || "";
+
+  if (!email) {
+    toast("Ошибка", "Введите email");
+    return;
+  }
+
+  sendMagicLink(email);
+});
 document.getElementById("registerBtn")?.addEventListener("click", () => {
   const email = document.getElementById("authEmail")?.value || "";
   const password = document.getElementById("authPassword")?.value || "";
