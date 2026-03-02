@@ -813,6 +813,7 @@ async function loginWithGoogle() {
     console.error(error);
     toast("Ошибка", error.message);
   }
+}
   // ===== BUTTON HANDLERS =====
 
 document.getElementById("registerBtn")?.addEventListener("click", () => {
