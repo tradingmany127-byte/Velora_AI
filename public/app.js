@@ -317,7 +317,7 @@ function openAuthModal() {
     <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
       <button class="btn" id="loginBtn">Войти</button>
       <button class="btn ghost" id="toggleVerify">У меня есть код</button>
-<button id="magicLinkBtn" class="btn-primary">
+<button class="btn primary" id="magicLinkBtn">
   Войти по ссылке
 </button>
     </div>
