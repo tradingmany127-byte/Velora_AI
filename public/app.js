@@ -1,3 +1,9 @@
+import { auth, googleProvider } from "./firebase.js";
+import { 
+  createUserWithEmailAndPassword, 
+  signInWithEmailAndPassword,
+  signInWithPopup
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 const API = {
   async get(url) {
     const r = await fetch(url, { credentials: "include" });
@@ -771,3 +777,56 @@ async function boot() {
 }
 
 boot();
+// ===== AUTH FUNCTIONS =====
+
+async function register(email, password) {
+  try {
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    state.user = userCredential.user;
+    toast("Успех", "Регистрация выполнена");
+    console.log("Registered:", userCredential.user);
+  } catch (error) {
+    console.error(error);
+    toast("Ошибка", error.message);
+  }
+}
+
+async function login(email, password) {
+  try {
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    state.user = userCredential.user;
+    toast("Успех", "Вход выполнен");
+    console.log("Logged in:", userCredential.user);
+  } catch (error) {
+    console.error(error);
+    toast("Ошибка", error.message);
+  }
+}
+
+async function loginWithGoogle() {
+  try {
+    const result = await signInWithPopup(auth, googleProvider);
+    state.user = result.user;
+    toast("Успех", "Вход через Google выполнен");
+    console.log("Google login:", result.user);
+  } catch (error) {
+    console.error(error);
+    toast("Ошибка", error.message);
+  }
+  // ===== BUTTON HANDLERS =====
+
+document.getElementById("registerBtn")?.addEventListener("click", () => {
+  const email = document.getElementById("authEmail")?.value || "";
+  const password = document.getElementById("authPassword")?.value || "";
+  register(email, password);
+});
+
+document.getElementById("loginBtn")?.addEventListener("click", () => {
+  const email = document.getElementById("authEmail")?.value || "";
+  const password = document.getElementById("authPassword")?.value || "";
+  login(email, password);
+});
+
+document.getElementById("googleBtn")?.addEventListener("click", () => {
+  loginWithGoogle();
+});
