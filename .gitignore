@@ -143,4 +143,4 @@ node_modules
 server/node_modules
 server/.env
 .DS_Store
-
+app_old.js
