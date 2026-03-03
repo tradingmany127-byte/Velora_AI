@@ -1,4 +1,4 @@
-import { auth, googleProvider, sendSignInLinkToEmail } from "./firebase.js";
+import { auth, googleProvider, sendEmailVerification } from "./firebase.js";
 import { 
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword,
@@ -811,6 +811,7 @@ boot();
 async function register(email, password) {
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    await sendEmailVerification(userCredential.user);
     state.user = userCredential.user;
     toast("Успех", "Регистрация выполнена");
     console.log("Registered:", userCredential.user);
