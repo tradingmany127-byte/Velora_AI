@@ -260,6 +260,22 @@ function openModal({ title, body, footer }) {
       <div class="body">${body || ""}</div>
       <div class="foot">${footer || `<button class="btn" data-close="1">Закрыть</button>`}</div>
     </div>
+    setTimeout(() => {
+  const btn = document.getElementById("magicLinkBtn");
+
+  if (btn) {
+    btn.addEventListener("click", async () => {
+      const email = document.getElementById("loginEmail")?.value || "";
+
+      if (!email) {
+        toast("Ошибка", "Введите email");
+        return;
+      }
+
+      await sendMagicLink(email);
+    });
+  }
+}, 0);
   `;
   elModalRoot.querySelectorAll("[data-close]").forEach(b => b.onclick = () => closeModal());
   elModalRoot.onclick = (e) => { if (e.target === elModalRoot) closeModal(); };
