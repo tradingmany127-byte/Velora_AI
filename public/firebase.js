@@ -6,7 +6,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 const firebaseConfig = {
-  apiKey: "ТВОЙ_КЛЮЧ",
+  apiKey: "AIzaSyB-63Q-WLv7ZPd3fYmMGWXCO2Vmmyr_5as",
   authDomain: "velora-ai-a6281.firebaseapp.com",
   projectId: "velora-ai-a6281",
   storageBucket: "velora-ai-a6281.appspot.com",
