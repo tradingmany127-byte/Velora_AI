@@ -337,8 +337,9 @@ function openAuthModal() {
   </button>
 </div>
 </div>
-    `;
 }
+    `;
+
 
 
   openModal({ title: "Вход / Регистрация", body, footer: `<button class="btn" data-close="1">Закрыть</button>` });
