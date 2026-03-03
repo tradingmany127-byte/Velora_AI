@@ -289,7 +289,7 @@ function showWelcome(name) {
   elWelcome.onclick = (e) => { if (e.target === elWelcome) { elWelcome.classList.add("hidden"); elWelcome.innerHTML=""; } };
 }
 
-function openAuthModal() {
+function openAuthModal() {}
   const body = `
     <div class="sub">
       Регистрация: <b>Имя</b> + <b>Email</b> + <b>Пароль</b> → код из письма (6 цифр).<br/>
@@ -337,7 +337,7 @@ function openAuthModal() {
   </button>
 </div>
 </div>
-}
+
     `;
 
 
