@@ -1,5 +1,4 @@
-
-import { auth, googleProvider } from "./firebase.js";
+import { auth, googleProvider, sendSignInLinkToEmail } from "./firebase.js";
 import { 
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword,
