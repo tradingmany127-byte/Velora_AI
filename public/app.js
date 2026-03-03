@@ -289,7 +289,7 @@ function showWelcome(name) {
   elWelcome.onclick = (e) => { if (e.target === elWelcome) { elWelcome.classList.add("hidden"); elWelcome.innerHTML=""; } };
 }
 
-function openAuthModal() {
+function openAuthModal() {}
   const body = `
     <div class="sub">
       Регистрация: <b>Имя</b> + <b>Email</b> + <b>Пароль</b> → код из письма (6 цифр).<br/>
@@ -334,7 +334,11 @@ function openAuthModal() {
     <div class="hr"></div>
     <div class="sub">Или:</div>
     <button class="btn" id="googleBtn" style="width:100%; margin-top:8px;">Войти через Google (скоро)</button>
-  `;
+  </button>
+</div>
+</div>
+    `;
+
 
   openModal({ title: "Вход / Регистрация", body, footer: `<button class="btn" data-close="1">Закрыть</button>` });
 setTimeout(() => {
@@ -365,54 +369,21 @@ if (btn) {
   };
 }
 }, 0);
-  const verifyBox = document.getElementById("verifyBox");
-  document.getElementById("toggleVerify").onclick = () => {
-    verifyBox.style.display = verifyBox.style.display === "none" ? "block" : "none";
-  };
-
-  document.getElementById("googleBtn").onclick = () => toast("Скоро", "Google Sign-In подключим следующим шагом.");
-
+  
   document.getElementById("regBtn").onclick = async () => {
-    const name = document.getElementById("regName").value.trim();
-    const email = document.getElementById("regEmail").value.trim();
-    const password = document.getElementById("regPass").value;
+  const email = document.getElementById("regEmail").value.trim();
+  const password = document.getElementById("regPass").value;
+  await register(email, password);
+};
 
-    const r = await API.post("/api/auth/register", { name, email, password });
-    if (!r.ok) return toast("Ошибка регистрации", r.error || "Попробуй ещё раз.");
+document.getElementById("loginBtn").onclick = async () => {
+  const email = document.getElementById("loginEmail").value.trim();
+  const password = document.getElementById("loginPass").value;
+  await login(email, password);
+};
+ 
 
-    toast("Код отправлен", "Введи 6 цифр и подтверди.");
-    verifyBox.style.display = "block";
-    document.getElementById("verEmail").value = email;
-  };
-
-  document.getElementById("loginBtn").onclick = async () => {
-    const email = document.getElementById("loginEmail").value.trim();
-    const password = document.getElementById("loginPass").value;
-
-    const r = await API.post("/api/auth/login", { email, password });
-    if (!r.ok) {
-      if (r.error === "NOT_VERIFIED") {
-        toast("Почта не подтверждена", "Нажми “У меня есть код” и введи 6 цифр.");
-        verifyBox.style.display = "block";
-        document.getElementById("verEmail").value = email;
-        return;
-      }
-      return toast("Ошибка входа", r.error || "Неверные данные.");
-    }
-
-    await bootAfterAuth("login");
-  };
-
-  document.getElementById("verBtn").onclick = async () => {
-    const email = document.getElementById("verEmail").value.trim();
-    const code = document.getElementById("verCode").value.trim();
-
-    const r = await API.post("/api/auth/verify", { email, code });
-    if (!r.ok) return toast("Ошибка", r.error || "Неверный код.");
-
-    await bootAfterAuth("verify");
-  };
-}
+  
 
 async function bootAfterAuth(source) {
   const me = await API.get("/api/me");
