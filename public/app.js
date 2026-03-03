@@ -340,18 +340,30 @@ function openAuthModal() {
 setTimeout(() => {
   const btn = document.getElementById("magicLinkBtn");
 
-  if (btn) {
-    btn.addEventListener("click", async () => {
-      const email = document.getElementById("loginEmail")?.value || "";
+if (btn) {
+  btn.onclick = async () => {
+    if (btn.dataset.sending === "1") return;
+    btn.dataset.sending = "1";
+    btn.disabled = true;
 
+    try {
+      const email = document.getElementById("loginEmail")?.value?.trim();
       if (!email) {
         toast("Ошибка", "Введите email");
         return;
       }
 
       await sendMagicLink(email);
-    });
-  }
+
+    } catch (e) {
+      console.error(e);
+      toast("Ошибка", e.code || e.message);
+    } finally {
+      btn.dataset.sending = "0";
+      btn.disabled = false;
+    }
+  };
+}
 }, 0);
   const verifyBox = document.getElementById("verifyBox");
   document.getElementById("toggleVerify").onclick = () => {
