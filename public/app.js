@@ -888,24 +888,26 @@ console.log("Google login:", result.user);
 
     
 // вызови при старте приложения
-onAuthStateChanged(firebaseAuth, async (user) => {
+document.addEventListener("click", async (e) => {
 
-  if (!user) {
-    console.log("No user session");
+  const logoutBtn = e.target.closest("#logoutBtn");
 
-    state.user = null;
+  if (!logoutBtn) return;
 
-    // показать экран входа
-    showAuthScreen();
+  await signOut(firebaseAuth);
 
-    return;
-  }
+  state.user = null;
 
+  console.log("User logged out");
+
+  location.reload();
+
+});
   console.log("User session restored:", user.email);
 
   await bootAfterAuth("firebase");
 
-});
+
 
   // ===== BUTTON HANDLERS =====
 const openAuthBtn = document.getElementById("openAuthBtn");
