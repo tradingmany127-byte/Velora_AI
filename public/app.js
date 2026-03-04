@@ -1,3 +1,5 @@
+import { setPersistence, browserSessionPersistence } from "firebase/auth";
+await setPersistence(firebaseAuth, browserSessionPersistence);
 import { firebaseAuth, googleProvider, sendEmailVerification } from "./firebase.js";
 import { 
   createUserWithEmailAndPassword, 
@@ -886,10 +888,23 @@ console.log("Google login:", result.user);
 
     
 // вызови при старте приложения
-firebaseAuth.onAuthStateChanged((user) => {
-if (user) {
-bootAfterAuth("firebase");
-}
+onAuthStateChanged(firebaseAuth, async (user) => {
+
+  if (!user) {
+    console.log("No user session");
+
+    state.user = null;
+
+    // показать экран входа
+    showAuthScreen();
+
+    return;
+  }
+
+  console.log("User session restored:", user.email);
+
+  await bootAfterAuth("firebase");
+
 });
 
   // ===== BUTTON HANDLERS =====
@@ -938,4 +953,11 @@ document.addEventListener("click", async (e) => {
     console.error("LOGOUT ERROR ❌", err);
   }
 
+});
+document.addEventListener("click", (e) => {
+  const btn = e.target.closest("#authBtn"); // <-- тут твой реальный id кнопки
+  if (!btn) return;
+
+  console.log("AUTH CLICK");
+  openAuthModal(); // или showAuthModal(), что у тебя есть
 });
