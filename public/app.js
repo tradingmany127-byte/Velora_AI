@@ -1,9 +1,14 @@
+import { firebaseAuth, googleProvider } from "./firebase.js";
 
-import { firebaseAuth, googleProvider, sendEmailVerification } from "./firebase.js";
-import { 
-  createUserWithEmailAndPassword, 
+import {
+  onAuthStateChanged,
+  setPersistence,
+  browserSessionPersistence,
+  createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  signInWithPopup
+  signInWithPopup,
+  sendEmailVerification,
+  signOut
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 const API = {
   async get(url) {
