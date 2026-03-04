@@ -917,15 +917,25 @@ document.getElementById("googleBtn")?.addEventListener("click", () => {
 document.addEventListener("click", async (e) => {
 
   const logoutBtn = e.target.closest("#logoutBtn");
-
   if (!logoutBtn) return;
 
-  await signOut(firebaseAuth);
+  console.log("LOGOUT CLICK ✅");
 
-  state.user = null;
+  try {
 
-  console.log("User logged out");
+    console.log("signOut is:", typeof signOut);
+    console.log("before:", firebaseAuth.currentUser?.email);
 
-  location.reload();
+    await signOut(firebaseAuth);
+
+    console.log("after:", firebaseAuth.currentUser);
+
+    state.user = null;
+
+    location.reload();
+
+  } catch (err) {
+    console.error("LOGOUT ERROR ❌", err);
+  }
 
 });
