@@ -411,11 +411,14 @@ document.getElementById("loginBtn").onclick = async () => {
 async function bootAfterAuth(source) {
   // 1) берем пользователя из Firebase
   const u = firebaseAuth.currentUser;
-  if (!u) return;
-  // ✅ GUARD: запрещаем вход без подтверждения почты
-if (u.emailVerified === false) {
+if (!u) return;
+
+// ✅ обязательно: обновляем данные пользователя (emailVerified)
+await u.reload();
+
+if (firebaseAuth.currentUser && firebaseAuth.currentUser.emailVerified === false) {
   await signOut(firebaseAuth);
-  toast("Подтверди почту", "Подтверди email и зайди снова.");
+  toast("Подтверди почту", "Подтверди email из письма и зайди снова.");
   return;
 }
 
