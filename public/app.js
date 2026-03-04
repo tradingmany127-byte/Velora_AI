@@ -914,3 +914,18 @@ document.getElementById("loginBtn")?.addEventListener("click", () => {
 document.getElementById("googleBtn")?.addEventListener("click", () => {
   loginWithGoogle();
 });
+document.addEventListener("click", async (e) => {
+
+  const logoutBtn = e.target.closest("#logoutBtn");
+
+  if (!logoutBtn) return;
+
+  await signOut(firebaseAuth);
+
+  state.user = null;
+
+  console.log("User logged out");
+
+  location.reload();
+
+});
