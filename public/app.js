@@ -1,5 +1,4 @@
-import { setPersistence, browserSessionPersistence } from "firebase/auth";
-await setPersistence(firebaseAuth, browserSessionPersistence);
+
 import { firebaseAuth, googleProvider, sendEmailVerification } from "./firebase.js";
 import { 
   createUserWithEmailAndPassword, 
