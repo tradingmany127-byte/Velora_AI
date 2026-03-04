@@ -1,4 +1,4 @@
-import { auth, googleProvider, sendEmailVerification } from "./firebase.js";
+import { firebaseAuth, googleProvider, sendEmailVerification } from "./firebase.js";
 import { 
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword,
@@ -850,7 +850,12 @@ bootAfterAuth("firebase");
 });
 
   // ===== BUTTON HANDLERS =====
+const openAuthBtn = document.getElementById("openAuthBtn");
+const authModal = document.getElementById("authModal");
 
+openAuthBtn?.addEventListener("click", () => {
+authModal.style.display = "flex";
+});
 document.getElementById("registerBtn")?.addEventListener("click", () => {
   const email = document.getElementById("authEmail")?.value || "";
   const password = document.getElementById("authPassword")?.value || "";
