@@ -45,6 +45,26 @@ function toast(title, detail = "") {
   elToasts.appendChild(t);
   setTimeout(() => t.remove(), 3400);
 }
+  // ===== TOPBAR BUTTONS (global handler) =====
+document.addEventListener("click", (e) => {
+
+  // кнопка вход / регистрация
+  if (e.target.closest("#authBtn")) {
+    openAuthModal?.();
+  }
+
+  // кнопка профиль
+  if (e.target.closest("#profileBtn")) {
+    openProfile?.();
+  }
+
+  // закрытие модалки
+  if (e.target.closest("[data-close='1']")) {
+    closeModal?.();
+  }
+
+});
+
 function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
 
 function topbar() {
@@ -144,6 +164,7 @@ function renderChat() {
   renderMessages();
 }
 
+  
 function renderMessages() {
   const log = document.getElementById("chatLog");
   log.innerHTML = "";
@@ -391,6 +412,12 @@ async function bootAfterAuth(source) {
   // 1) берем пользователя из Firebase
   const u = firebaseAuth.currentUser;
   if (!u) return;
+  // ✅ GUARD: запрещаем вход без подтверждения почты
+if (u.emailVerified === false) {
+  await signOut(firebaseAuth);
+  toast("Подтверди почту", "Подтверди email и зайди снова.");
+  return;
+}
 
   // 2) кладем в state.user так, как ожидает твой UI
   state.user = {
@@ -804,9 +831,12 @@ boot();
 async function register(email, password) {
   try {
     const userCredential = await createUserWithEmailAndPassword(firebaseAuth, email, password);
+
     await sendEmailVerification(userCredential.user);
     toast("Успех", "Регистрация выполнена");
-    await bootAfterAuth("firebase");
+   toast("Проверь почту", "Мы отправили письмо. Подтверди email и только потом входи.");
+await signOut(firebaseAuth);
+return;
     console.log("Registered:", userCredential.user);
   } catch (error) {
     console.error(error);
@@ -817,6 +847,14 @@ async function register(email, password) {
 async function login(email, password) {
   try {
     const userCredential = await signInWithEmailAndPassword(firebaseAuth, email, password);
+    const user = userCredential.user;
+
+// 🚫 запрещаем вход если почта не подтверждена
+if (!user.emailVerified) {
+  await signOut(firebaseAuth);
+  toast("Подтверди почту", "Сначала подтвердите email из письма.");
+  return;
+}
     toast("Успех", "Вход выполнен");
     await bootAfterAuth("firebase");
     console.log("Logged in:", userCredential.user);
@@ -829,10 +867,10 @@ async function login(email, password) {
 async function loginWithGoogle() {
   try {
     const result = await signInWithPopup(firebaseAuth, googleProvider);
-    toast("Успех", "Вход через Google выполнен");
-    await bootAfterAuth("firebase");
-    console.log("Google login:", result.user);
-   
+    const user = result.user;
+    toast("успех", "Вход через Google выполнен");
+await bootAfterAuth("firebase");
+console.log("Google login:", result.user);
   } catch (error) {
     console.error(error);
     toast("Ошибка", error.message);
