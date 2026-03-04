@@ -388,21 +388,39 @@ document.getElementById("loginBtn").onclick = async () => {
   
 
 async function bootAfterAuth(source) {
-  const me = await API.get("/api/me");
-  state.user = me.user;
-  await refreshProfileSilent();
-  closeModal();
+  // 1) берем пользователя из Firebase
+  const u = firebaseAuth.currentUser;
+  if (!u) return;
 
-  // создадим чат сразу
-  if (!state.activeChatId) {
-    const c = await API.post("/api/chats/new", { title: "Первый чат" });
-    if (c.ok) state.activeChatId = c.chatId;
-    state.currentMessages = [];
+  // 2) кладем в state.user так, как ожидает твой UI
+  state.user = {
+    id: u.uid,
+    email: u.email,
+    name: u.displayName || (u.email ? u.email.split("@")[0] : "user"),
+    provider: u.providerData?.[0]?.providerId || "password",
+  };
+
+  // 3) дальше — твой текущий сценарий (чтобы не сломать кнопку “Профиль”)
+  await refreshProfilesSilent?.();
+  closeModal?.();
+
+  // если у тебя тут создаётся “первый чат” — оставляй, как было
+  if (!state.activeChatId && API?.post) {
+    try {
+      const c = await API.post("/api/chats/new", { title: "первый чат" });
+      if (c?.ok) {
+        state.activeChatId = c.chatId;
+        state.currentMessages = [];
+      }
+    } catch {}
   }
 
-  showWelcome(state.user?.name || "друг");
-  renderChat();
+  // ЭТО ГЛАВНОЕ: твой UI-переключатель
+  showWelcome?.(state.user?.name || "друг");
+  renderChat?.();
 }
+
+  
 
 async function refreshProfileSilent() {
   if (!state.user) return;
@@ -783,10 +801,10 @@ boot();
 
 async function register(email, password) {
   try {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const userCredential = await createUserWithEmailAndPassword(firebaseAuth, email, password);
     await sendEmailVerification(userCredential.user);
-    state.user = userCredential.user;
     toast("Успех", "Регистрация выполнена");
+    await bootAfterAuth("firebase");
     console.log("Registered:", userCredential.user);
   } catch (error) {
     console.error(error);
@@ -796,9 +814,9 @@ async function register(email, password) {
 
 async function login(email, password) {
   try {
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
-    state.user = userCredential.user;
+    const userCredential = await signInWithEmailAndPassword(firebaseAuth, email, password);
     toast("Успех", "Вход выполнен");
+    await bootAfterAuth("firebase");
     console.log("Logged in:", userCredential.user);
   } catch (error) {
     console.error(error);
@@ -808,10 +826,11 @@ async function login(email, password) {
 
 async function loginWithGoogle() {
   try {
-    const result = await signInWithPopup(auth, googleProvider);
-    state.user = result.user;
+    const result = await signInWithPopup(firebaseAuth, googleProvider);
     toast("Успех", "Вход через Google выполнен");
+    await bootAfterAuth("firebase");
     console.log("Google login:", result.user);
+   
   } catch (error) {
     console.error(error);
     toast("Ошибка", error.message);
@@ -824,6 +843,11 @@ async function loginWithGoogle() {
 
     
 // вызови при старте приложения
+firebaseAuth.onAuthStateChanged((user) => {
+if (user) {
+bootAfterAuth("firebase");
+}
+});
 
   // ===== BUTTON HANDLERS =====
 
