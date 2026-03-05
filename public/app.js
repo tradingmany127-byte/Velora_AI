@@ -905,14 +905,12 @@ document.getElementById("googleBtn")?.addEventListener("click", () => {
   loginWithGoogle();
 });
 document.addEventListener("click", async (e) => {
-
   const logoutBtn = e.target.closest("#logoutBtn");
   if (!logoutBtn) return;
 
   console.log("LOGOUT CLICK ✅");
 
   try {
-
     console.log("signOut is:", typeof signOut);
     console.log("before:", firebaseAuth.currentUser?.email);
 
@@ -921,45 +919,9 @@ document.addEventListener("click", async (e) => {
     console.log("after:", firebaseAuth.currentUser);
 
     state.user = null;
-
     location.reload();
-
-  }catch (err) {
+  } catch (err) {
     console.error("LOGOUT ERROR ❌", err);
   }
 });
-document.getElementById("checkVerifyBtn")?.addEventListener("click", async () => {
 
-  const user = firebaseAuth.currentUser;
-
-  if (!user) {
-    alert("Сначала войдите или зарегистрируйтесь");
-    return;
-  }
-
-  await user.reload();
-
-  if (firebaseAuth.currentUser.emailVerified) {
-    alert("Почта подтверждена ✅");
-    bootAfterAuth("firebase");
-  } else {
-    alert("Почта ещё не подтверждена");
-  }
-
-});
-
-
-document.getElementById("resendVerifyBtn")?.addEventListener("click", async () => {
-
-  const user = firebaseAuth.currentUser;
-
-  if (!user) {
-    alert("Нет пользователя");
-    return;
-  }
-
-  await sendEmailVerification(user);
-
-  alert("Письмо отправлено ещё раз 📧");
-
-});
