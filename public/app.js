@@ -317,13 +317,11 @@ function showWelcome(name) {
   elWelcome.onclick = (e) => { if (e.target === elWelcome) { elWelcome.classList.add("hidden"); elWelcome.innerHTML=""; } };
 }
 
-function openAuthModal() {}
+function openAuthModal() {
   const body = `
     <div class="sub">
-      Регистрация: <b>Имя</b> + <b>Email</b> + <b>Пароль</b> → код из письма (6 цифр).<br/>
-      <span style="color:rgba(234,240,255,.45)">Если SMTP не настроен (dev-mode) — код будет в консоли сервера.</span>
-    </div>
-    <div class="hr"></div>
+      
+      
 
     <div class="row">
       <input id="regName" class="input" placeholder="Имя пользователя" />
@@ -343,27 +341,12 @@ function openAuthModal() {}
     <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
       <button class="btn" id="loginBtn">Войти</button>
       <button class="btn ghost" id="toggleVerify">У меня есть код</button>
-<button class="btn primary" id="magicLinkBtn">
-  Войти по ссылке
-</button>
-    </div>
 
-    <div id="verifyBox" style="display:none; margin-top:12px;">
-      <div class="hr"></div>
-      <div class="row">
-        <input id="verEmail" class="input" placeholder="Email" />
-        <input id="verCode" class="input" placeholder="Код 6 цифр" />
-      </div>
-      <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
-        <button class="btn primary" id="verBtn">Подтвердить</button>
-      </div>
-    </div>
 
     <div class="hr"></div>
     <div class="sub">Или:</div>
     <button class="btn" id="googleBtn" style="width:100%; margin-top:8px;">Войти через Google (скоро)</button>
-  </button>
-</div>
+  </div>
 </div>
 
     `;
@@ -411,9 +394,7 @@ document.getElementById("loginBtn").onclick = async () => {
   const password = document.getElementById("loginPass").value;
   await login(email, password);
 };
- 
-
-  
+}
 
 async function bootAfterAuth(source) {
   // 1) берем пользователя из Firebase
@@ -906,18 +887,12 @@ const openAuthBtn = document.getElementById("openAuthBtn");
 const authModal = document.getElementById("authModal");
 
 openAuthBtn?.addEventListener("click", () => {
-authModal.style.display = "flex";
+  authModal.style.display = "flex";
 });
 document.getElementById("registerBtn")?.addEventListener("click", () => {
   const email = document.getElementById("authEmail")?.value || "";
   const password = document.getElementById("authPassword")?.value || "";
   register(email, password);
-});
-
-document.getElementById("loginBtn")?.addEventListener("click", () => {
-  const email = document.getElementById("authEmail")?.value || "";
-  const password = document.getElementById("authPassword")?.value || "";
-  login(email, password);
 });
 
 document.getElementById("googleBtn")?.addEventListener("click", () => {
@@ -943,15 +918,7 @@ document.addEventListener("click", async (e) => {
 
     location.reload();
 
-  } catch (err) {
+  }catch (err) {
     console.error("LOGOUT ERROR ❌", err);
   }
-
-});
-document.addEventListener("click", (e) => {
-  const btn = e.target.closest("#authBtn"); // <-- тут твой реальный id кнопки
-  if (!btn) return;
-
-  console.log("AUTH CLICK");
-  openAuthModal(); // или showAuthModal(), что у тебя есть
 });
