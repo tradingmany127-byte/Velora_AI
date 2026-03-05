@@ -285,7 +285,7 @@ function openModal({ title, body, footer }) {
         <button class="btn ghost" data-close="1">✕</button>
       </div>
       <div class="body">${body || ""}</div>
-      
+    </div>
   `;
   elModalRoot.querySelectorAll("[data-close]").forEach(b => b.onclick = () => closeModal());
   elModalRoot.onclick = (e) => { if (e.target === elModalRoot) closeModal(); };
@@ -347,13 +347,12 @@ function openAuthModal() {
 <div class="sub" id="verifyHint" style="margin-top:10px; opacity:.9">
   После подтверждения почты нажми “Я подтвердил — продолжить”.
 </div>
- </div>
+    </div>
 
     <div class="hr"></div>
     <div class="sub">Или:</div>
     <button class="btn" id="googleBtn" style="width:100%; margin-top:8px;">Войти через Google (скоро)</button>
   </div>
-</div>
 
     `;
 
@@ -905,6 +904,45 @@ document.getElementById("googleBtn")?.addEventListener("click", () => {
   loginWithGoogle();
 });
 document.addEventListener("click", async (e) => {
+  // 1) Отправить письмо ещё раз
+  const resendBtn = e.target.closest("#resendVerifyBtn");
+  if (resendBtn) {
+    try {
+      const user = firebaseAuth.currentUser;
+      if (!user) return alert("Нет пользователя");
+
+      await sendEmailVerification(user);
+      alert("Письмо отправлено ещё раз 📧");
+    } catch (err) {
+      console.error("RESEND VERIFY ERROR ❌", err);
+      alert("Ошибка отправки письма");
+    }
+    return;
+  }
+
+  // 2) Я подтвердил — продолжить
+  const checkBtn = e.target.closest("#checkVerifyBtn");
+  if (checkBtn) {
+    try {
+      const user = firebaseAuth.currentUser;
+      if (!user) return alert("Сначала войдите или зарегистрируйтесь");
+
+      await user.reload();
+
+      if (firebaseAuth.currentUser?.emailVerified) {
+        alert("Почта подтверждена ✅");
+        bootAfterAuth("firebase"); // если у тебя функция называется иначе — скажи, заменю
+      } else {
+        alert("Почта ещё не подтверждена");
+      }
+    } catch (err) {
+      console.error("CHECK VERIFY ERROR ❌", err);
+      alert("Ошибка проверки подтверждения");
+    }
+    return;
+  }
+
+  // 3) Logout (то что у тебя было)
   const logoutBtn = e.target.closest("#logoutBtn");
   if (!logoutBtn) return;
 
@@ -924,4 +962,3 @@ document.addEventListener("click", async (e) => {
     console.error("LOGOUT ERROR ❌", err);
   }
 });
-
