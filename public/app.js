@@ -903,62 +903,60 @@ document.getElementById("registerBtn")?.addEventListener("click", () => {
 document.getElementById("googleBtn")?.addEventListener("click", () => {
   loginWithGoogle();
 });
+import { signInWithEmailAndPassword, sendEmailVerification } from "firebase/auth"; 
+// (если импорты у тебя в firebase.js — просто убедись что эти функции доступны)
+
+async function getOrLoginUser() {
+  let user = firebaseAuth.currentUser;
+  if (user) return user;
+
+  const email = document.getElementById("loginEmail")?.value?.trim();
+  const pass = document.getElementById("loginPass")?.value;
+
+  if (!email || !pass) return null;
+
+  await signInWithEmailAndPassword(firebaseAuth, email, pass);
+  return firebaseAuth.currentUser;
+}
+
 document.addEventListener("click", async (e) => {
-  // 1) Отправить письмо ещё раз
+
+  // Отправить письмо ещё раз
   const resendBtn = e.target.closest("#resendVerifyBtn");
   if (resendBtn) {
     try {
-      const user = firebaseAuth.currentUser;
-      if (!user) return alert("Нет пользователя");
+      const user = await getOrLoginUser();
+      if (!user) return alert("Сначала войдите (email+пароль) или зарегистрируйтесь");
 
       await sendEmailVerification(user);
       alert("Письмо отправлено ещё раз 📧");
     } catch (err) {
-      console.error("RESEND VERIFY ERROR ❌", err);
+      console.error("RESEND VERIFY ERROR", err);
       alert("Ошибка отправки письма");
     }
     return;
   }
 
-  // 2) Я подтвердил — продолжить
+  // Я подтвердил — продолжить
   const checkBtn = e.target.closest("#checkVerifyBtn");
   if (checkBtn) {
     try {
-      const user = firebaseAuth.currentUser;
-      if (!user) return alert("Сначала войдите или зарегистрируйтесь");
+      const user = await getOrLoginUser();
+      if (!user) return alert("Сначала войдите (email+пароль) или зарегистрируйтесь");
 
       await user.reload();
 
       if (firebaseAuth.currentUser?.emailVerified) {
         alert("Почта подтверждена ✅");
-        bootAfterAuth("firebase"); // если у тебя функция называется иначе — скажи, заменю
+        bootAfterAuth("firebase"); // или bootAfterAuth(...) как у тебя
       } else {
         alert("Почта ещё не подтверждена");
       }
     } catch (err) {
-      console.error("CHECK VERIFY ERROR ❌", err);
+      console.error("CHECK VERIFY ERROR", err);
       alert("Ошибка проверки подтверждения");
     }
     return;
   }
 
-  // 3) Logout (то что у тебя было)
-  const logoutBtn = e.target.closest("#logoutBtn");
-  if (!logoutBtn) return;
-
-  console.log("LOGOUT CLICK ✅");
-
-  try {
-    console.log("signOut is:", typeof signOut);
-    console.log("before:", firebaseAuth.currentUser?.email);
-
-    await signOut(firebaseAuth);
-
-    console.log("after:", firebaseAuth.currentUser);
-
-    state.user = null;
-    location.reload();
-  } catch (err) {
-    console.error("LOGOUT ERROR ❌", err);
-  }
 });
