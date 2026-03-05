@@ -907,14 +907,23 @@ document.getElementById("googleBtn")?.addEventListener("click", () => {
 // (если импорты у тебя в firebase.js — просто убедись что эти функции доступны)
 
 async function getOrLoginUser() {
+  // 1) если уже залогинен — ок
   let user = firebaseAuth.currentUser;
   if (user) return user;
 
-  const email = document.getElementById("loginEmail")?.value?.trim();
-  const pass = document.getElementById("loginPass")?.value;
+  // 2) пробуем взять email/pass из формы логина
+  let email = document.getElementById("loginEmail")?.value?.trim();
+  let pass  = document.getElementById("loginPass")?.value;
+
+  // 3) если в логине пусто — берём из формы регистрации
+  if (!email || !pass) {
+    email = document.getElementById("authEmail")?.value?.trim();
+    pass  = document.getElementById("authPassword")?.value;
+  }
 
   if (!email || !pass) return null;
 
+  // 4) логинимся
   await signInWithEmailAndPassword(firebaseAuth, email, pass);
   return firebaseAuth.currentUser;
 }
