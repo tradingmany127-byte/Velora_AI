@@ -903,7 +903,7 @@ document.getElementById("registerBtn")?.addEventListener("click", () => {
 document.getElementById("googleBtn")?.addEventListener("click", () => {
   loginWithGoogle();
 });
-import { signInWithEmailAndPassword, sendEmailVerification } from "firebase/auth"; 
+
 // (если импорты у тебя в firebase.js — просто убедись что эти функции доступны)
 
 async function getOrLoginUser() {
