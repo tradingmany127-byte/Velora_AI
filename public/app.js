@@ -341,7 +341,13 @@ function openAuthModal() {
     <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
       <button class="btn" id="loginBtn">Войти</button>
       <button class="btn ghost" id="toggleVerify">У меня есть код</button>
+<button class="btn" id="resendVerifyBtn" type="button">Отправить письмо ещё раз</button>
+<button class="btn primary" id="checkVerifyBtn" type="button">Я подтвердил — продолжить</button>
 
+<div class="sub" id="verifyHint" style="margin-top:10px; opacity:.9">
+  После подтверждения почты нажми “Я подтвердил — продолжить”.
+</div>
+ </div>
 
     <div class="hr"></div>
     <div class="sub">Или:</div>
@@ -921,4 +927,39 @@ document.addEventListener("click", async (e) => {
   }catch (err) {
     console.error("LOGOUT ERROR ❌", err);
   }
+});
+document.getElementById("checkVerifyBtn")?.addEventListener("click", async () => {
+
+  const user = firebaseAuth.currentUser;
+
+  if (!user) {
+    alert("Сначала войдите или зарегистрируйтесь");
+    return;
+  }
+
+  await user.reload();
+
+  if (firebaseAuth.currentUser.emailVerified) {
+    alert("Почта подтверждена ✅");
+    bootAfterAuth("firebase");
+  } else {
+    alert("Почта ещё не подтверждена");
+  }
+
+});
+
+
+document.getElementById("resendVerifyBtn")?.addEventListener("click", async () => {
+
+  const user = firebaseAuth.currentUser;
+
+  if (!user) {
+    alert("Нет пользователя");
+    return;
+  }
+
+  await sendEmailVerification(user);
+
+  alert("Письмо отправлено ещё раз 📧");
+
 });
