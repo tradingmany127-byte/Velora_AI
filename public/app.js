@@ -1,3 +1,4 @@
+// ----- Firebase (Browser, no bundler) -----
 import { firebaseAuth, googleProvider } from "./firebase.js";
 
 import {
@@ -885,35 +886,22 @@ console.log("Google login:", result.user);
     toast("Ошибка", error.message);
   }
 }
-// ===== EMAIL LINK (MAGIC LINK) AUTH =====
+// ===== AUTH STATE (авто-вход/выход) =====
+onAuthStateChanged(firebaseAuth, async (user) => {
+  try {
+    if (!user) {
+      state.user = null;
+      // показываем UI как "гость", модалку НЕ обязаны открывать автоматически
+      // (если хочешь автопоказ — можно сделать authModal.style.display = "flex";)
+      return;
+    }
 
-
-// Авто-логин если пользователь открыл сайт по ссылке из письма
-
-    
-// вызови при старте приложения
-document.addEventListener("click", async (e) => {
-
-  const logoutBtn = e.target.closest("#logoutBtn");
-
-  if (!logoutBtn) return;
-
-  await signOut(firebaseAuth);
-
-  state.user = null;
-
-  console.log("User logged out");
-
-  location.reload();
-
+    // user есть → грузим приложение
+    await bootAfterAuth("firebase");
+  } catch (err) {
+    console.error("onAuthStateChanged error:", err);
+  }
 });
-  console.log("User session restored:", user.email);
-
-  await bootAfterAuth("firebase");
-
-
-
-  // ===== BUTTON HANDLERS =====
 const openAuthBtn = document.getElementById("openAuthBtn");
 const authModal = document.getElementById("authModal");
 
