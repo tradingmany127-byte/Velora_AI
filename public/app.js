@@ -72,7 +72,29 @@ document.addEventListener("click", (e) => {
 
 });
 
-function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
+function updateModalToVerification() {
+  elModalRoot.innerHTML = `
+    <div class="modal fadeIn">
+      <div class="head">
+        <h3>Подтверждение email</h3>
+        <button class="btn ghost" data-close="1">✕</button>
+      </div>
+      <div class="body">
+        <div class="sub">
+          Мы отправили письмо для подтверждения почты.
+          Подтвердите email и нажмите "Я подтвердил — продолжить".
+        </div>
+        <div class="hr"></div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <button class="btn" id="resendVerifyBtn">Отправить письмо ещё раз</button>
+          <button class="btn primary" id="checkVerifyBtn">Я подтвердил — продолжить</button>
+        </div>
+      </div>
+    </div>
+  `;
+  elModalRoot.querySelectorAll("[data-close]").forEach(b => b.onclick = () => closeModal());
+  elModalRoot.onclick = (e) => { if (e.target === elModalRoot) closeModal(); };
+}
 
 function topbar() {
   const rightBtn = state.user
@@ -298,23 +320,24 @@ function closeModal() {
 function showWelcome(name) {
   elWelcome.classList.remove("hidden");
   elWelcome.innerHTML = `
-    <div class="welcomeCard fadeIn">
-      <h2>Я Velora AI</h2>
-      <div class="sub">
-        Привет, <b>${escapeHtml(name || "друг")}</b> 👋<br/>
-        Рад видеть тебя. Давай сделаем так, чтобы ты реально продвигался вперёд — спокойно, уверенно и без хаоса.
-        Я сохраню твои чаты, настройки и прогресс — и буду рядом.
+    <div class="welcomePanel fadeIn">
+      <div class="welcomeGlow"></div>
+      <h1>Добро пожаловать в Velora AI</h1>
+      <div class="welcomeText">
+        Velora — это ваш интеллектуальный AI-ассистент,
+        который помогает превращать идеи в результат.<br/><br/>
+        Здесь вы можете:<br/>
+        • анализировать идеи<br/>
+        • генерировать контент<br/>
+        • работать с AI инструментами<br/>
+        • создавать проекты быстрее<br/><br/>
+        Velora работает рядом с вами.
       </div>
-      <div class="hr"></div>
-      <div style="display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;">
-        <button class="btn" id="goChat">В чат</button>
-        <button class="btn primary" id="goProfile">Открыть профиль</button>
-      </div>
+      <button class="btn primary welcomeBtn" id="startWorkBtn">Начать работу</button>
     </div>
   `;
-  document.getElementById("goChat").onclick = () => { elWelcome.classList.add("hidden"); elWelcome.innerHTML=""; };
-  document.getElementById("goProfile").onclick = () => { elWelcome.classList.add("hidden"); elWelcome.innerHTML=""; openProfile(); };
-  elWelcome.onclick = (e) => { if (e.target === elWelcome) { elWelcome.classList.add("hidden"); elWelcome.innerHTML=""; } };
+  document.getElementById("startWorkBtn").onclick = () => { elWelcome.classList.add("hidden"); elWelcome.innerHTML=""; renderChat(); };
+  elWelcome.onclick = (e) => { if (e.target === elWelcome) { elWelcome.classList.add("hidden"); elWelcome.innerHTML=""; renderChat(); } };
 }
 
 function openAuthModal() {
@@ -340,13 +363,6 @@ function openAuthModal() {
     </div>
     <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
       <button class="btn" id="loginBtn">Войти</button>
-      <button class="btn ghost" id="toggleVerify">У меня есть код</button>
-<button class="btn" id="resendVerifyBtn" type="button">Отправить письмо ещё раз</button>
-<button class="btn primary" id="checkVerifyBtn" type="button">Я подтвердил — продолжить</button>
-
-<div class="sub" id="verifyHint" style="margin-top:10px; opacity:.9">
-  После подтверждения почты нажми “Я подтвердил — продолжить”.
-</div>
     </div>
 
     <div class="hr"></div>
@@ -408,12 +424,6 @@ if (!u) return;
 
 // ✅ обязательно: обновляем данные пользователя (emailVerified)
 await u.reload();
-
-if (firebaseAuth.currentUser && firebaseAuth.currentUser.emailVerified === false) {
-  await signOut(firebaseAuth);
-  toast("Подтверди почту", "Подтверди email из письма и зайди снова.");
-  return;
-}
 
   // 2) кладем в state.user так, как ожидает твой UI
   state.user = {
@@ -552,6 +562,7 @@ function openProfile() {
   document.getElementById("logoutItem").onclick = async () => {
     const r = await API.post("/api/auth/logout", {});
     if (r.ok) {
+      await signOut(firebaseAuth);
       state.user = null;
       state.profile = null;
       state.activeChatId = null;
@@ -827,16 +838,28 @@ boot();
 async function register(email, password) {
   try {
     const userCredential = await createUserWithEmailAndPassword(firebaseAuth, email, password);
-
     await sendEmailVerification(userCredential.user);
-    toast("Успех", "Регистрация выполнена");
-   toast("Проверь почту", "Мы отправили письмо. Подтверди email и только потом входи.");
-await signOut(firebaseAuth);
-return;
+    toast("Успех", "Регистрация выполнена. Мы отправили письмо для подтверждения почты.");
+    // Изменить модалку на сообщение о подтверждении
+    updateModalToVerification();
     console.log("Registered:", userCredential.user);
   } catch (error) {
     console.error(error);
-    toast("Ошибка", error.message);
+    let message = "Ошибка регистрации";
+    switch (error.code) {
+      case 'auth/email-already-in-use':
+        message = "Этот email уже зарегистрирован. Попробуйте войти.";
+        break;
+      case 'auth/invalid-email':
+        message = "Введите корректный email";
+        break;
+      case 'auth/weak-password':
+        message = "Пароль слишком слабый";
+        break;
+      default:
+        message = error.message;
+    }
+    toast("Ошибка", message);
   }
 }
 
@@ -845,18 +868,32 @@ async function login(email, password) {
     const userCredential = await signInWithEmailAndPassword(firebaseAuth, email, password);
     const user = userCredential.user;
 
-// 🚫 запрещаем вход если почта не подтверждена
-if (!user.emailVerified) {
-  await signOut(firebaseAuth);
-  toast("Подтверди почту", "Сначала подтвердите email из письма.");
-  return;
-}
+    if (!user.emailVerified) {
+      toast("Подтверди почту", "Пожалуйста подтвердите почту");
+      updateModalToVerification();
+      return;
+    }
+
     toast("Успех", "Вход выполнен");
     await bootAfterAuth("firebase");
     console.log("Logged in:", userCredential.user);
   } catch (error) {
     console.error(error);
-    toast("Ошибка", error.message);
+    let message = "Ошибка входа";
+    switch (error.code) {
+      case 'auth/user-not-found':
+        message = "Пользователь не найден";
+        break;
+      case 'auth/wrong-password':
+        message = "Неверный пароль";
+        break;
+      case 'auth/invalid-email':
+        message = "Введите корректный email";
+        break;
+      default:
+        message = error.message;
+    }
+    toast("Ошибка", message);
   }
 }
 
@@ -935,13 +972,13 @@ document.addEventListener("click", async (e) => {
   if (resendBtn) {
     try {
       const user = await getOrLoginUser();
-      if (!user) return alert("Сначала войдите (email+пароль) или зарегистрируйтесь");
+      if (!user) return toast("Ошибка", "Сначала войдите или зарегистрируйтесь");
 
       await sendEmailVerification(user);
-      alert("Письмо отправлено ещё раз 📧");
+      toast("Готово", "Письмо отправлено ещё раз");
     } catch (err) {
       console.error("RESEND VERIFY ERROR", err);
-      alert("Ошибка отправки письма");
+      toast("Ошибка", "Ошибка отправки письма");
     }
     return;
   }
@@ -951,19 +988,19 @@ document.addEventListener("click", async (e) => {
   if (checkBtn) {
     try {
       const user = await getOrLoginUser();
-      if (!user) return alert("Сначала войдите (email+пароль) или зарегистрируйтесь");
+      if (!user) return toast("Ошибка", "Сначала войдите или зарегистрируйтесь");
 
       await user.reload();
 
       if (firebaseAuth.currentUser?.emailVerified) {
-        alert("Почта подтверждена ✅");
-        bootAfterAuth("firebase"); // или bootAfterAuth(...) как у тебя
+        toast("Успех", "Почта подтверждена");
+        await bootAfterAuth("firebase");
       } else {
-        alert("Почта ещё не подтверждена");
+        toast("Ошибка", "Почта ещё не подтверждена");
       }
     } catch (err) {
       console.error("CHECK VERIFY ERROR", err);
-      alert("Ошибка проверки подтверждения");
+      toast("Ошибка", "Ошибка проверки подтверждения");
     }
     return;
   }
