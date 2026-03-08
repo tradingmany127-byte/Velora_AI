@@ -13,8 +13,8 @@ const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Подключаем папку public (она на уровень выше: ../public)
-const publicDir = path.join(__dirname, "../public");
+// Подключаем папку public
+const publicDir = path.join(__dirname, "public");
 
 const PORT = Number(process.env.PORT || 3000);
 
