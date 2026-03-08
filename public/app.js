@@ -320,7 +320,7 @@ function closeModal() {
 
 function showWelcome(name) {
   // Проверяем первый ли это визит
-  const isFirstVisit = !localStorage.getItem('velora_welcome_shown');
+  const isFirstVisit = !localStorage.getItem('velora_welcome_seen');
   
   // Если пользователь уже видел приветствие - не показываем
   if (!isFirstVisit) {
@@ -379,6 +379,8 @@ function showWelcome(name) {
   document.getElementById("startWithVeloraBtn").onclick = () => {
     elWelcome.classList.add("hidden");
     elWelcome.innerHTML="";
+    // Сразу сохраняем флаг первого визита
+    localStorage.setItem('velora_welcome_seen', 'true');
     // Открываем модальное окно регистрации
     openAuthModal();
   };
@@ -386,6 +388,8 @@ function showWelcome(name) {
   document.getElementById("justLookBtn").onclick = () => {
     elWelcome.classList.add("hidden");
     elWelcome.innerHTML="";
+    // Сразу сохраняем флаг первого визита
+    localStorage.setItem('velora_welcome_seen', 'true');
     // Открываем основной интерфейс в гостевом режиме
     renderChat();
   };
@@ -395,12 +399,11 @@ function showWelcome(name) {
     if (e.target === elWelcome) {
       elWelcome.classList.add("hidden");
       elWelcome.innerHTML="";
+      // Сразу сохраняем флаг первого визита
+      localStorage.setItem('velora_welcome_seen', 'true');
       renderChat();
     }
   };
-  
-  // Сохраняем информацию о показе welcome
-  localStorage.setItem('velora_welcome_shown', 'true');
 }
 
 function openAuthModal() {
@@ -876,9 +879,14 @@ function openPayments() {
 }
 
 async function boot() {
-  // Сначала проверяем первый ли это визит
-  const isFirstVisit = !localStorage.getItem('velora_welcome_shown');
+  // 1. Сначала проверяем welcome - ДО auth-логики
+  const isFirstVisit = !localStorage.getItem('velora_welcome_seen');
+  if (isFirstVisit) {
+    showWelcome('гость');
+    return; // Останавливаем, пока пользователь не выберет действие
+  }
   
+  // 2. Потом auth-логика - работает независимо от welcome
   onAuthStateChanged(firebaseAuth, async (user) => {
     if (user) {
       await refreshProfileSilent();
@@ -890,14 +898,9 @@ async function boot() {
         return;
       }
       await createNewChat();
-    } else {
-      // Нет пользователя - показываем welcome только при первом заходе
-      if (isFirstVisit) {
-        showWelcome('гость');
-        return;
-      }
     }
-
+    
+    // 3. Всегда показываем интерфейс (для авторизованных и гостей)
     renderChat();
   });
 }
@@ -983,36 +986,14 @@ async function loginWithGoogle() {
     toast("Ошибка", message);
   }
 }
-// ===== AUTH STATE (авто-вход/выход) =====
-onAuthStateChanged(firebaseAuth, async (user) => {
-  try {
-    if (!user) {
-      state.user = null;
-      // показываем UI как "гость", модалку НЕ обязаны открывать автоматически
-      // (если хочешь автопоказ — можно сделать authModal.style.display = "flex";)
-      return;
-    }
 
-    // Обновляем данные пользователя
-    await user.reload();
-
-    if (user.emailVerified) {
-      // user есть и email подтверждён → грузим приложение
-      await bootAfterAuth("firebase");
-    } else {
-      // user есть, но email не подтверждён → показываем экран ожидания подтверждения
-      updateModalToVerification();
-    }
-  } catch (err) {
-    console.error("onAuthStateChanged error:", err);
-  }
-});
 const openAuthBtn = document.getElementById("openAuthBtn");
 const authModal = document.getElementById("authModal");
 
 openAuthBtn?.addEventListener("click", () => {
   authModal.style.display = "flex";
 });
+
 document.getElementById("registerBtn")?.addEventListener("click", () => {
   const email = document.getElementById("authEmail")?.value || "";
   const password = document.getElementById("authPassword")?.value || "";
