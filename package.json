@@ -1,0 +1,30 @@
+{
+  "name": "velora-ai",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tradingMANY127-byte/Velora_AI.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/tradingMANY127-byte/Velora_AI/issues"
+  },
+  "homepage": "https://github.com/tradingMANY127-byte/Velora_AI#readme",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "better-sqlite3": "^12.6.2",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "nanoid": "^5.1.6",
+    "nodemailer": "^8.0.1"
+  }
+}
