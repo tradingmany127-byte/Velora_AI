@@ -1,7 +1,7 @@
 // ----- Firebase (Browser, no bundler) -----
-import { firebaseAuth, googleProvider } from "./firebase.js";
-
-import {
+import { 
+  firebaseAuth, 
+  googleProvider,
   onAuthStateChanged,
   setPersistence,
   browserSessionPersistence,
@@ -10,7 +10,8 @@ import {
   signInWithPopup,
   sendEmailVerification,
   signOut
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+} from "./firebase.js";
+
 const API = {
   async get(url) {
     const r = await fetch(url, { credentials: "include" });

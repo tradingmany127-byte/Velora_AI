@@ -1,9 +1,15 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
-
   getAuth,
   GoogleAuthProvider,
-  sendEmailVerification
+  sendEmailVerification,
+  onAuthStateChanged,
+  setPersistence,
+  browserSessionPersistence,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signInWithPopup,
+  signOut
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 const firebaseConfig = {
   apiKey: "AIzaSyB-63Q-WLv7ZPd3fYmMGWXCO2Vmmyr_5as",
@@ -18,4 +24,15 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const googleProvider = new GoogleAuthProvider();
 
-export { auth as firebaseAuth, googleProvider, sendEmailVerification };
+export { 
+  auth as firebaseAuth, 
+  googleProvider, 
+  sendEmailVerification,
+  onAuthStateChanged,
+  setPersistence,
+  browserSessionPersistence,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signInWithPopup,
+  signOut
+};
