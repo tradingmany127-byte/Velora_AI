@@ -1,7 +1,7 @@
 // ----- Firebase (Browser, no bundler) -----
-import { 
-  firebaseAuth, 
-  googleProvider,
+import { firebaseAuth, googleProvider } from "./firebase.js";
+
+import {
   onAuthStateChanged,
   setPersistence,
   browserSessionPersistence,
@@ -10,14 +10,13 @@ import {
   signInWithPopup,
   sendEmailVerification,
   signOut
-} from "./firebase.js";
-
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 const API = {
   async get(url) {
     const r = await fetch(url, { credentials: "include" });
     const data = await r.json();
     // 🚨 Не показываем UNAUTHORIZED если пользователь не авторизован
-    if (data.error === "UNAUTHORIZED" && state && !state.user) {
+    if (data.error === "UNAUTHORIZED" && !state.user) {
       data.ok = false;
       data._silentAuthError = true; // Помечаем как тихую ошибку
     }
@@ -32,7 +31,7 @@ const API = {
     });
     const data = await r.json();
     // 🚨 Не показываем UNAUTHORIZED если пользователь не авторизован
-    if (data.error === "UNAUTHORIZED" && state && !state.user) {
+    if (data.error === "UNAUTHORIZED" && !state.user) {
       data.ok = false;
       data._silentAuthError = true;
     }
@@ -45,7 +44,7 @@ const API = {
     });
     const data = await r.json();
     // 🚨 Не показываем UNAUTHORIZED если пользователь не авторизован
-    if (data.error === "UNAUTHORIZED" && state && !state.user) {
+    if (data.error === "UNAUTHORIZED" && !state.user) {
       data.ok = false;
       data._silentAuthError = true;
     }
@@ -185,17 +184,13 @@ function renderChat() {
   `;
 
   // bind
-  const brandHome = document.getElementById("brandHome");
-  if (brandHome) brandHome.onclick = () => renderChat();
+  document.getElementById("brandHome").onclick = () => renderChat();
 
   if (!state.user) {
-    const authBtn = document.getElementById("authBtn");
-    if (authBtn) authBtn.onclick = () => openAuthModal();
+    document.getElementById("authBtn").onclick = () => openAuthModal();
   } else {
-    const profileBtn = document.getElementById("profileBtn");
-    if (profileBtn) profileBtn.onclick = () => openProfile();
-    const newChatBtn = document.getElementById("newChatBtn");
-    if (newChatBtn) newChatBtn.onclick = () => createNewChat();
+    document.getElementById("profileBtn").onclick = () => openProfile();
+    document.getElementById("newChatBtn").onclick = () => createNewChat();
   }
 
   elApp.querySelectorAll("[data-mode]").forEach(b => {
@@ -215,9 +210,8 @@ function renderChat() {
 
   // send
   const input = document.getElementById("chatInput");
-  const sendBtn = document.getElementById("sendBtn");
-  if (sendBtn) sendBtn.onclick = () => sendMessage(input.value);
-  if (input) input.onkeydown = (e) => {
+  document.getElementById("sendBtn").onclick = () => sendMessage(input.value);
+  input.onkeydown = (e) => {
     if (e.key === "Enter") sendMessage(input.value);
   };
 
@@ -227,8 +221,6 @@ function renderChat() {
   
 function renderMessages() {
   const log = document.getElementById("chatLog");
-  if (!log) return;
-  
   log.innerHTML = "";
 
   const msgs = state.user ? (state.currentMessages || []) : state.guestSession;
@@ -509,15 +501,15 @@ if (btn) {
 }
 }, 0);
   
-  document.getElementById("regBtn")?.onclick = async () => {
-  const email = document.getElementById("regEmail")?.value.trim();
-  const password = document.getElementById("regPass")?.value;
+  document.getElementById("regBtn").onclick = async () => {
+  const email = document.getElementById("regEmail").value.trim();
+  const password = document.getElementById("regPass").value;
   await register(email, password);
 };
 
-document.getElementById("loginBtn")?.onclick = async () => {
-  const email = document.getElementById("loginEmail")?.value.trim();
-  const password = document.getElementById("loginPass")?.value;
+document.getElementById("loginBtn").onclick = async () => {
+  const email = document.getElementById("loginEmail").value.trim();
+  const password = document.getElementById("loginPass").value;
   await login(email, password);
 };
 }
@@ -529,7 +521,6 @@ async function bootAfterAuth(source) {
   const u = firebaseAuth.currentUser;
   if (!u) return;
 
-  // обязательно: обновляем данные пользователя (emailVerified)
   // ✅ обязательно: обновляем данные пользователя (emailVerified)
   await u.reload();
 
@@ -1015,10 +1006,7 @@ async function boot() {
     return; // Останавливаем, пока пользователь не выберет действие
   }
   
-  // 2. Показываем интерфейс сразу для гостей
-  renderChat();
-  
-  // 3. Потом auth-логика - работает независимо от welcome
+  // 2. Потом auth-логика - работает независимо от welcome
   onAuthStateChanged(firebaseAuth, async (user) => {
     // 🚨 Пропускаем, если bootAfterAuth уже выполнен
     if (window._bootAfterAuthCompleted) return;
@@ -1039,11 +1027,12 @@ async function boot() {
       await createNewChat();
     }
     
-    // 4. Всегда показываем интерфейс (для авторизованных и гостей)
+    // 3. Всегда показываем интерфейс (для авторизованных и гостей)
     renderChat();
   });
 }
 
+boot();
 // ===== AUTH FUNCTIONS =====
 
 async function register(email, password) {
@@ -1278,5 +1267,3 @@ function groupChatsByDate(chats) {
   });
   return out;
 }
-
-boot();
