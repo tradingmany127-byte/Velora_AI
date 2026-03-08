@@ -509,15 +509,15 @@ if (btn) {
 }
 }, 0);
   
-  document.getElementById("regBtn").onclick = async () => {
-  const email = document.getElementById("regEmail").value.trim();
-  const password = document.getElementById("regPass").value;
+  document.getElementById("regBtn")?.onclick = async () => {
+  const email = document.getElementById("regEmail")?.value?.trim();
+  const password = document.getElementById("regPass")?.value;
   await register(email, password);
 };
 
-document.getElementById("loginBtn").onclick = async () => {
-  const email = document.getElementById("loginEmail").value.trim();
-  const password = document.getElementById("loginPass").value;
+document.getElementById("loginBtn")?.onclick = async () => {
+  const email = document.getElementById("loginEmail")?.value?.trim();
+  const password = document.getElementById("loginPass")?.value;
   await login(email, password);
 };
 }
@@ -667,8 +667,8 @@ function openProfile() {
     footer: `<button class="btn" data-close="1">Закрыть</button>`
   });
 
-  document.getElementById("upgradeBtn").onclick = () => openModelPlans();
-  document.getElementById("logoutItem").onclick = async () => {
+  document.getElementById("upgradeBtn")?.onclick = () => openModelPlans();
+  document.getElementById("logoutItem")?.onclick = async () => {
     const r = await API.post("/api/auth/logout", {});
     if (r.ok) {
       await signOut(firebaseAuth);
@@ -779,7 +779,7 @@ async function openChatHistory() {
   });
 
   // Обработчик создания нового чата
-  document.getElementById("createNewChatBtn").onclick = async () => {
+  document.getElementById("createNewChatBtn")?.onclick = async () => {
     closeModal();
     await createNewChat();
   };
@@ -954,10 +954,10 @@ function openAiSettings() {
 
   openModal({ title: "Настройки AI", body, footer: `<button class="btn" data-close="1">Закрыть</button>` });
 
-  document.getElementById("saveSettings").onclick = async () => {
-    const tone = document.getElementById("toneSel").value;
-    const length = document.getElementById("lenSel").value;
-    const language = document.getElementById("langSel").value;
+  document.getElementById("saveSettings")?.onclick = async () => {
+    const tone = document.getElementById("toneSel")?.value;
+    const length = document.getElementById("lenSel")?.value;
+    const language = document.getElementById("langSel")?.value;
 
     const r = await API.post("/api/profile/settings", { tone, length, language });
     if (!r.ok) return toast("Ошибка", "Не удалось сохранить.");
@@ -1003,7 +1003,7 @@ function openPayments() {
   `;
 
   openModal({ title: "Платежи", body, footer: `<button class="btn" data-close="1">Закрыть</button>` });
-  document.getElementById("renewBtn").onclick = () => toast("Скоро", "Продление и оплаты подключим отдельным шагом.");
+  document.getElementById("renewBtn")?.onclick = () => toast("Скоро", "Продление и оплаты подключим отдельным шагом.");
 }
 
 async function boot() {
