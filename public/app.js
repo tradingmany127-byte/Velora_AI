@@ -919,8 +919,16 @@ onAuthStateChanged(firebaseAuth, async (user) => {
       return;
     }
 
-    // user есть → грузим приложение
-    await bootAfterAuth("firebase");
+    // Обновляем данные пользователя
+    await user.reload();
+
+    if (user.emailVerified) {
+      // user есть и email подтверждён → грузим приложение
+      await bootAfterAuth("firebase");
+    } else {
+      // user есть, но email не подтверждён → показываем экран ожидания подтверждения
+      updateModalToVerification();
+    }
   } catch (err) {
     console.error("onAuthStateChanged error:", err);
   }
