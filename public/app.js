@@ -367,7 +367,7 @@ function openAuthModal() {
 
     <div class="hr"></div>
     <div class="sub">Или:</div>
-    <button class="btn" id="googleBtn" style="width:100%; margin-top:8px;">Войти через Google (скоро)</button>
+    <button class="btn" id="googleBtn" style="width:100%; margin-top:8px;">Войти через Google</button>
   </div>
 
     `;
@@ -901,12 +901,16 @@ async function loginWithGoogle() {
   try {
     const result = await signInWithPopup(firebaseAuth, googleProvider);
     const user = result.user;
-    toast("успех", "Вход через Google выполнен");
-await bootAfterAuth("firebase");
-console.log("Google login:", result.user);
+    toast("Успех", "Вход через Google выполнен");
+    await bootAfterAuth("firebase");
+    console.log("Google login:", result.user);
   } catch (error) {
     console.error(error);
-    toast("Ошибка", error.message);
+    let message = "Ошибка входа через Google";
+    if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
+      message = "Вход через Google был отменён";
+    }
+    toast("Ошибка", message);
   }
 }
 // ===== AUTH STATE (авто-вход/выход) =====
