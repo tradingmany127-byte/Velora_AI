@@ -1169,6 +1169,12 @@ const googleBtn = document.getElementById("googleBtn");
 if (googleBtn) {
   googleBtn.addEventListener("click", () => {
     loginWithGoogle();
+  });
+}
+
+async function getOrLoginUser() {
+  // 1) если уже залогинен — ок
+  let user = firebaseAuth.currentUser;
   if (user) return user;
 
   // 2) пробуем взять email/pass из формы логина
