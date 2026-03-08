@@ -1015,7 +1015,10 @@ async function boot() {
     return; // Останавливаем, пока пользователь не выберет действие
   }
   
-  // 2. Потом auth-логика - работает независимо от welcome
+  // 2. Показываем интерфейс сразу для гостей
+  renderChat();
+  
+  // 3. Потом auth-логика - работает независимо от welcome
   onAuthStateChanged(firebaseAuth, async (user) => {
     // 🚨 Пропускаем, если bootAfterAuth уже выполнен
     if (window._bootAfterAuthCompleted) return;
@@ -1036,7 +1039,7 @@ async function boot() {
       await createNewChat();
     }
     
-    // 3. Всегда показываем интерфейс (для авторизованных и гостей)
+    // 4. Всегда показываем интерфейс (для авторизованных и гостей)
     renderChat();
   });
 }
