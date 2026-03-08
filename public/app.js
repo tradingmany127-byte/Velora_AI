@@ -218,7 +218,7 @@ function renderChat() {
   const sendBtn = document.getElementById("sendBtn");
   if (sendBtn) sendBtn.onclick = () => sendMessage(input?.value || "");
   if (input) input.onkeydown = (e) => {
-    if (e.key === "Enter") sendMessage(input.value);
+    if (e.key === "Enter") sendMessage(input?.value || "");
   };
 
   renderMessages();
