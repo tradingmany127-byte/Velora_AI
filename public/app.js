@@ -14,7 +14,13 @@ import {
 const API = {
   async get(url) {
     const r = await fetch(url, { credentials: "include" });
-    return r.json();
+    const data = await r.json();
+    // 🚨 Не показываем UNAUTHORIZED если пользователь не авторизован
+    if (data.error === "UNAUTHORIZED" && !state.user) {
+      data.ok = false;
+      data._silentAuthError = true; // Помечаем как тихую ошибку
+    }
+    return data;
   },
   async post(url, body) {
     const r = await fetch(url, {
@@ -23,14 +29,26 @@ const API = {
       body: JSON.stringify(body || {}),
       credentials: "include"
     });
-    return r.json();
+    const data = await r.json();
+    // 🚨 Не показываем UNAUTHORIZED если пользователь не авторизован
+    if (data.error === "UNAUTHORIZED" && !state.user) {
+      data.ok = false;
+      data._silentAuthError = true;
+    }
+    return data;
   },
   async delete(url) {
     const r = await fetch(url, {
       method: "DELETE",
       credentials: "include"
     });
-    return r.json();
+    const data = await r.json();
+    // 🚨 Не показываем UNAUTHORIZED если пользователь не авторизован
+    if (data.error === "UNAUTHORIZED" && !state.user) {
+      data.ok = false;
+      data._silentAuthError = true;
+    }
+    return data;
   }
 };
 
@@ -225,7 +243,10 @@ function renderMessages() {
 
 async function createNewChat() {
   const r = await API.post("/api/chats/new", { title: "Новый чат" });
-  if (!r.ok) return toast("Ошибка", r.error || "Не удалось создать чат.");
+  if (!r.ok) {
+    if (r._silentAuthError) return; // 🚨 Не показываем UNAUTHORIZED для гостей
+    return toast("Ошибка", r.error || "Не удалось создать чат.");
+  }
   state.activeChatId = r.chatId;
   state.currentMessages = [];
   toast("Готово", "Создал новый чат.");
@@ -234,7 +255,10 @@ async function createNewChat() {
 
 async function loadChat(chatId) {
   const r = await API.get(`/api/chats/${chatId}`);
-  if (!r.ok) return toast("Ошибка", r.error || "Не удалось открыть чат.");
+  if (!r.ok) {
+    if (r._silentAuthError) return; // 🚨 Не показываем UNAUTHORIZED для гостей
+    return toast("Ошибка", r.error || "Не удалось открыть чат.");
+  }
   state.activeChatId = chatId;
   state.currentMessages = (r.messages || []).map(x => ({
     role: x.role === "user" ? "user" : "assistant",
@@ -666,7 +690,10 @@ function openProfile() {
 
 async function openChatHistory() {
   const r = await API.get("/api/chats");
-  if (!r.ok) return toast("Ошибка", "Не удалось загрузить историю.");
+  if (!r.ok) {
+    if (r._silentAuthError) return; // Не показываем UNAUTHORIZED для гостей
+    return toast("Ошибка", "Не удалось загрузить историю.");
+  }
 
   const chats = r.chats || [];
 
@@ -991,6 +1018,10 @@ async function boot() {
       if (list.ok && list.chats?.length) {
         state.activeChatId = list.chats[0].id;
         await loadChat(state.activeChatId);
+        return;
+      }
+      if (list._silentAuthError) {
+        console.log("Silent auth error:", list._silentAuthError);
         return;
       }
       await createNewChat();
