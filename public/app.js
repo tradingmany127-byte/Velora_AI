@@ -504,22 +504,28 @@ if (btn) {
     } finally {
       btn.dataset.sending = "0";
       btn.disabled = false;
-    }
-  };
-}
+      }
+    };
+  }
 }, 0);
   
-  document.getElementById("regBtn")?.onclick = async () => {
-  const email = document.getElementById("regEmail")?.value?.trim();
-  const password = document.getElementById("regPass")?.value;
-  await register(email, password);
-};
+  const regBtn = document.getElementById("regBtn");
+  if (regBtn) {
+    regBtn.onclick = async () => {
+      const email = document.getElementById("regEmail")?.value?.trim();
+      const password = document.getElementById("regPass")?.value;
+      await register(email, password);
+    };
+  }
 
-document.getElementById("loginBtn")?.onclick = async () => {
-  const email = document.getElementById("loginEmail")?.value?.trim();
-  const password = document.getElementById("loginPass")?.value;
-  await login(email, password);
-};
+  const loginBtn = document.getElementById("loginBtn");
+  if (loginBtn) {
+    loginBtn.onclick = async () => {
+      const email = document.getElementById("loginEmail")?.value?.trim();
+      const password = document.getElementById("loginPass")?.value;
+      await login(email, password);
+    };
+  }
 }
 
 async function bootAfterAuth(source) {
@@ -529,7 +535,7 @@ async function bootAfterAuth(source) {
   const u = firebaseAuth.currentUser;
   if (!u) return;
 
-  // ✅ обязательно: обновляем данные пользователя (emailVerified)
+  // обязательно: обновляем данные пользователя (emailVerified)
   await u.reload();
 
   // 2) кладем в state.user так, как ожидает твой UI
@@ -560,7 +566,7 @@ async function bootAfterAuth(source) {
   // Просто показываем основной интерфейс без welcome экрана
   renderChat?.();
   
-  // 🚨 ВАЖНО: Помечаем, что bootAfterAuth уже выполнен
+  // ВАЖНО: Помечаем, что bootAfterAuth уже выполнен
   window._bootAfterAuthCompleted = true;
 }
 
@@ -667,22 +673,28 @@ function openProfile() {
     footer: `<button class="btn" data-close="1">Закрыть</button>`
   });
 
-  document.getElementById("upgradeBtn")?.onclick = () => openModelPlans();
-  document.getElementById("logoutItem")?.onclick = async () => {
-    const r = await API.post("/api/auth/logout", {});
-    if (r.ok) {
-      await signOut(firebaseAuth);
-      state.user = null;
-      state.profile = null;
-      state.activeChatId = null;
-      state.currentMessages = [];
-      // Очищаем флаг bootAfterAuth при выходе
-      window._bootAfterAuthCompleted = false;
-      toast("Готово", "Вы вышли из аккаунта.");
-      closeModal();
-      renderChat();
-    }
-  };
+  const upgradeBtn = document.getElementById("upgradeBtn");
+  if (upgradeBtn) {
+    upgradeBtn.onclick = () => openModelPlans();
+  }
+  const logoutItem = document.getElementById("logoutItem");
+  if (logoutItem) {
+    logoutItem.onclick = async () => {
+      const r = await API.post("/api/auth/logout", {});
+      if (r.ok) {
+        await signOut(firebaseAuth);
+        state.user = null;
+        state.profile = null;
+        state.activeChatId = null;
+        state.currentMessages = [];
+        // Очищаем флаг bootAfterAuth при выходе
+        window._bootAfterAuthCompleted = false;
+        toast("Готово", "Вы вышли из аккаунта.");
+        closeModal();
+        renderChat();
+      }
+    };
+  }
 
   elModalRoot.querySelectorAll("[data-go]").forEach(x => {
     x.onclick = () => {
@@ -779,10 +791,13 @@ async function openChatHistory() {
   });
 
   // Обработчик создания нового чата
-  document.getElementById("createNewChatBtn")?.onclick = async () => {
-    closeModal();
-    await createNewChat();
-  };
+  const createNewChatBtn = document.getElementById("createNewChatBtn");
+  if (createNewChatBtn) {
+    createNewChatBtn.onclick = async () => {
+      closeModal();
+      await createNewChat();
+    };
+  }
 
   // Обработчики открытия чатов
   document.querySelectorAll("[data-open-chat]").forEach(item => {
@@ -894,7 +909,8 @@ function openModelPlans() {
   `;
 
   openModal({ title: "Подписки и модели", body, footer: `<button class="btn" data-close="1">Закрыть</button>` });
-  elModalRoot.querySelectorAll("[data-upgrade]").forEach(btn => {
+  const upgradeBtns = elModalRoot.querySelectorAll("[data-upgrade]");
+  upgradeBtns.forEach(btn => {
     btn.onclick = () => toast("Скоро", "Оплата будет подключена отдельно.");
   });
 }
@@ -954,17 +970,20 @@ function openAiSettings() {
 
   openModal({ title: "Настройки AI", body, footer: `<button class="btn" data-close="1">Закрыть</button>` });
 
-  document.getElementById("saveSettings")?.onclick = async () => {
-    const tone = document.getElementById("toneSel")?.value;
-    const length = document.getElementById("lenSel")?.value;
-    const language = document.getElementById("langSel")?.value;
+  const saveSettings = document.getElementById("saveSettings");
+  if (saveSettings) {
+    saveSettings.onclick = async () => {
+      const tone = document.getElementById("toneSel")?.value;
+      const length = document.getElementById("lenSel")?.value;
+      const language = document.getElementById("langSel")?.value;
 
-    const r = await API.post("/api/profile/settings", { tone, length, language });
-    if (!r.ok) return toast("Ошибка", "Не удалось сохранить.");
-    toast("Готово", "Настройки AI сохранены.");
-    await refreshProfileSilent();
-    closeModal();
-  };
+      const r = await API.post("/api/profile/settings", { tone, length, language });
+      if (!r.ok) return toast("Ошибка", "Не удалось сохранить.");
+      toast("Готово", "Настройки AI сохранены.");
+      await refreshProfileSilent();
+      closeModal();
+    };
+  }
 }
 
 function openPayments() {
@@ -1003,7 +1022,10 @@ function openPayments() {
   `;
 
   openModal({ title: "Платежи", body, footer: `<button class="btn" data-close="1">Закрыть</button>` });
-  document.getElementById("renewBtn")?.onclick = () => toast("Скоро", "Продление и оплаты подключим отдельным шагом.");
+  const renewBtn = document.getElementById("renewBtn");
+  if (renewBtn) {
+    renewBtn.onclick = () => toast("Скоро", "Продление и оплаты подключим отдельным шагом.");
+  }
 }
 
 async function boot() {
@@ -1125,25 +1147,28 @@ async function loginWithGoogle() {
 const openAuthBtn = document.getElementById("openAuthBtn");
 const authModal = document.getElementById("authModal");
 
-openAuthBtn?.addEventListener("click", () => {
-  authModal.style.display = "flex";
-});
+if (openAuthBtn) {
+  openAuthBtn.addEventListener("click", () => {
+    const authModal = document.getElementById("authModal");
+    if (authModal) {
+      authModal.style.display = "flex";
+    }
+  });
+}
 
-document.getElementById("registerBtn")?.addEventListener("click", () => {
-  const email = document.getElementById("authEmail")?.value || "";
-  const password = document.getElementById("authPassword")?.value || "";
-  register(email, password);
-});
+const registerBtn = document.getElementById("registerBtn");
+if (registerBtn) {
+  registerBtn.addEventListener("click", () => {
+    const email = document.getElementById("authEmail")?.value || "";
+    const password = document.getElementById("authPassword")?.value || "";
+    register(email, password);
+  });
+}
 
-document.getElementById("googleBtn")?.addEventListener("click", () => {
-  loginWithGoogle();
-});
-
-// (если импорты у тебя в firebase.js — просто убедись что эти функции доступны)
-
-async function getOrLoginUser() {
-  // 1) если уже залогинен — ок
-  let user = firebaseAuth.currentUser;
+const googleBtn = document.getElementById("googleBtn");
+if (googleBtn) {
+  googleBtn.addEventListener("click", () => {
+    loginWithGoogle();
   if (user) return user;
 
   // 2) пробуем взять email/pass из формы логина
