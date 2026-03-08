@@ -185,13 +185,17 @@ function renderChat() {
   `;
 
   // bind
-  document.getElementById("brandHome").onclick = () => renderChat();
+  const brandHome = document.getElementById("brandHome");
+  if (brandHome) brandHome.onclick = () => renderChat();
 
   if (!state.user) {
-    document.getElementById("authBtn").onclick = () => openAuthModal();
+    const authBtn = document.getElementById("authBtn");
+    if (authBtn) authBtn.onclick = () => openAuthModal();
   } else {
-    document.getElementById("profileBtn").onclick = () => openProfile();
-    document.getElementById("newChatBtn").onclick = () => createNewChat();
+    const profileBtn = document.getElementById("profileBtn");
+    if (profileBtn) profileBtn.onclick = () => openProfile();
+    const newChatBtn = document.getElementById("newChatBtn");
+    if (newChatBtn) newChatBtn.onclick = () => createNewChat();
   }
 
   elApp.querySelectorAll("[data-mode]").forEach(b => {
@@ -211,8 +215,9 @@ function renderChat() {
 
   // send
   const input = document.getElementById("chatInput");
-  document.getElementById("sendBtn").onclick = () => sendMessage(input.value);
-  input.onkeydown = (e) => {
+  const sendBtn = document.getElementById("sendBtn");
+  if (sendBtn) sendBtn.onclick = () => sendMessage(input.value);
+  if (input) input.onkeydown = (e) => {
     if (e.key === "Enter") sendMessage(input.value);
   };
 
@@ -222,6 +227,8 @@ function renderChat() {
   
 function renderMessages() {
   const log = document.getElementById("chatLog");
+  if (!log) return;
+  
   log.innerHTML = "";
 
   const msgs = state.user ? (state.currentMessages || []) : state.guestSession;
@@ -502,15 +509,15 @@ if (btn) {
 }
 }, 0);
   
-  document.getElementById("regBtn").onclick = async () => {
-  const email = document.getElementById("regEmail").value.trim();
-  const password = document.getElementById("regPass").value;
+  document.getElementById("regBtn")?.onclick = async () => {
+  const email = document.getElementById("regEmail")?.value.trim();
+  const password = document.getElementById("regPass")?.value;
   await register(email, password);
 };
 
-document.getElementById("loginBtn").onclick = async () => {
-  const email = document.getElementById("loginEmail").value.trim();
-  const password = document.getElementById("loginPass").value;
+document.getElementById("loginBtn")?.onclick = async () => {
+  const email = document.getElementById("loginEmail")?.value.trim();
+  const password = document.getElementById("loginPass")?.value;
   await login(email, password);
 };
 }
@@ -522,6 +529,7 @@ async function bootAfterAuth(source) {
   const u = firebaseAuth.currentUser;
   if (!u) return;
 
+  // обязательно: обновляем данные пользователя (emailVerified)
   // ✅ обязательно: обновляем данные пользователя (emailVerified)
   await u.reload();
 
