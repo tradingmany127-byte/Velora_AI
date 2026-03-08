@@ -57,14 +57,18 @@ const state = {
   user: null,
   profile: null,
   activeChatId: null,
-  activeMode: "free", // free|pro
+  activeMode: "free", // free | pro
   guestSession: [], // не сохраняем в localStorage, только RAM
 };
 
-const elApp = document.getElementById("app");
-const elModalRoot = document.getElementById("modalRoot");
-const elToasts = document.getElementById("toasts");
-const elWelcome = document.getElementById("welcome");
+let elApp, elModalRoot, elToasts, elWelcome;
+
+function initDOMElements() {
+  elApp = document.getElementById("app");
+  elModalRoot = document.getElementById("modalRoot");
+  elToasts = document.getElementById("toasts");
+  elWelcome = document.getElementById("welcome");
+}
 
 function escapeHtml(s) {
   return String(s || "").replace(/[&<>"']/g, m => ({
@@ -1029,6 +1033,9 @@ function openPayments() {
 }
 
 async function boot() {
+  // 0. Инициализируем DOM элементы
+  initDOMElements();
+  
   // 1. Сначала проверяем welcome - ДО auth-логики
   const isFirstVisit = !localStorage.getItem('velora_welcome_seen');
   if (isFirstVisit) {
