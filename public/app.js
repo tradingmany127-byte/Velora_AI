@@ -1032,7 +1032,6 @@ async function boot() {
   });
 }
 
-boot();
 // ===== AUTH FUNCTIONS =====
 
 async function register(email, password) {
@@ -1267,3 +1266,5 @@ function groupChatsByDate(chats) {
   });
   return out;
 }
+
+boot();
