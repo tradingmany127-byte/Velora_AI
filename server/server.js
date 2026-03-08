@@ -228,10 +228,12 @@ app.post("/api/profile/settings", requireAuth, (req, res) => {
 // ---------------- CHATS (AUTH ONLY) ----------------
 app.get("/api/chats", requireAuth, (req, res) => {
   const rows = db.prepare(`
-    SELECT id, title, pinned, created_at, updated_at
-    FROM chats
-    WHERE user_id=?
-    ORDER BY pinned DESC, updated_at DESC
+    SELECT c.id, c.title, c.pinned, c.created_at, c.updated_at,
+           (SELECT content FROM messages WHERE chat_id=c.id AND role='assistant' ORDER BY created_at DESC LIMIT 1) as last_message,
+           (SELECT COUNT(*) FROM messages WHERE chat_id=c.id) as message_count
+    FROM chats c
+    WHERE c.user_id=?
+    ORDER BY c.pinned DESC, c.updated_at DESC
   `).all(req.me.user.id);
 
   res.json({ ok: true, chats: rows });
@@ -265,6 +267,31 @@ app.post("/api/chats/:id/pin", requireAuth, (req, res) => {
   const pinned = chat.pinned ? 0 : 1;
   db.prepare("UPDATE chats SET pinned=?, updated_at=? WHERE id=?").run(pinned, Date.now(), chat.id);
   res.json({ ok: true, pinned });
+});
+
+app.post("/api/chats/:id/rename", requireAuth, (req, res) => {
+  const { title } = req.body || {};
+  if (!title || String(title).trim() === "") return res.json({ ok: false, error: "MISSING_TITLE" });
+  
+  const chat = db.prepare("SELECT * FROM chats WHERE id=? AND user_id=?").get(req.params.id, req.me.user.id);
+  if (!chat) return res.json({ ok: false, error: "NOT_FOUND" });
+  
+  const newTitle = String(title).trim().slice(0, 80);
+  db.prepare("UPDATE chats SET title=?, updated_at=? WHERE id=?").run(newTitle, Date.now(), chat.id);
+  res.json({ ok: true, title: newTitle });
+});
+
+app.delete("/api/chats/:id", requireAuth, (req, res) => {
+  const chat = db.prepare("SELECT * FROM chats WHERE id=? AND user_id=?").get(req.params.id, req.me.user.id);
+  if (!chat) return res.json({ ok: false, error: "NOT_FOUND" });
+  
+  // Сначала удаляем сообщения чата
+  db.prepare("DELETE FROM messages WHERE chat_id=?").run(chat.id);
+  
+  // Потом удаляем сам чат
+  db.prepare("DELETE FROM chats WHERE id=?").run(chat.id);
+  
+  res.json({ ok: true });
 });
 
 // ---------------- CHAT (GUEST + AUTH) ----------------
