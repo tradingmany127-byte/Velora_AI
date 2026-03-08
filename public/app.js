@@ -24,6 +24,13 @@ const API = {
       credentials: "include"
     });
     return r.json();
+  },
+  async delete(url) {
+    const r = await fetch(url, {
+      method: "DELETE",
+      credentials: "include"
+    });
+    return r.json();
   }
 };
 
@@ -654,66 +661,145 @@ async function openChatHistory() {
   const r = await API.get("/api/chats");
   if (!r.ok) return toast("Ошибка", "Не удалось загрузить историю.");
 
-  const groups = groupChatsByDate(r.chats || []);
+  const chats = r.chats || [];
+
+  // Сортируем: закреплённые вверху, потом по дате обновления
+  const sortedChats = [...chats].sort((a, b) => {
+    if (a.pinned && !b.pinned) return -1;
+    if (!a.pinned && b.pinned) return 1;
+    return new Date(b.updated_at) - new Date(a.updated_at);
+  });
 
   const body = `
-    <div class="sub">История чатов отсортирована по датам. Можно закрепить любимый чат.</div>
+    <div class="chatHistoryHeader">
+      <div class="sub">У вас ${chats.length} чатов. Закреплённые всегда вверху.</div>
+      <button class="btn primary" id="createNewChatBtn" style="margin-top:12px;">
+        ➕ Создать новый чат
+      </button>
+    </div>
+    
     <div class="hr"></div>
-    <div class="list">
-      ${Object.keys(groups).map(date => `
-        <div class="card" style="padding:12px;">
-          <div class="h"><h2>${escapeHtml(date)}</h2></div>
-          <div class="hr"></div>
-          <div class="list">
-            ${groups[date].map(c => `
-              <div class="item" data-open-chat="${c.id}">
-                <div class="check">${c.pinned ? "📌" : "💬"}</div>
-                <p>
-                  ${escapeHtml(c.title)}
-                  <small>${new Date(c.updated_at).toLocaleString()}</small>
-                </p>
-                <button class="btn ghost" data-pin="${c.id}" style="margin-left:auto;">${c.pinned ? "Unpin" : "Pin"}</button>
+    
+    <div class="chatHistoryList">
+      ${sortedChats.length === 0 ? `
+        <div class="emptyState" style="text-align:center; padding:40px; color:var(--muted);">
+          <div style="font-size:48px; margin-bottom:16px;">💬</div>
+          <div style="font-size:18px; margin-bottom:8px;">Нет чатов</div>
+          <div style="font-size:14px;">Начните общение с Velora AI</div>
+        </div>
+      ` : sortedChats.map(c => `
+        <div class="chatHistoryItem" data-chat-id="${c.id}" data-pinned="${c.pinned}">
+          <div class="chatHistoryMain" data-open-chat="${c.id}">
+            <div class="chatHistoryIcon">
+              ${c.pinned ? "📌" : "💬"}
+            </div>
+            
+            <div class="chatHistoryContent">
+              <div class="chatHistoryTitle">
+                ${escapeHtml(c.title)}
+                <div class="chatHistoryActions">
+                  <button class="chatHistoryMenuBtn" data-menu="${c.id}">⋮</button>
+                </div>
               </div>
-            `).join("")}
+              
+              <div class="chatHistoryPreview">
+                ${c.last_message ? escapeHtml(c.last_message).substring(0, 100) + (c.last_message.length > 100 ? "..." : "") : "Нет сообщений"}
+              </div>
+              
+              <div class="chatHistoryMeta">
+                <span class="chatHistoryDate">${formatChatDate(c.updated_at)}</span>
+                <span class="chatHistoryMessageCount">${c.message_count || 0} сообщений</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="chatHistoryMenu" id="menu-${c.id}" style="display:none;">
+            <button class="chatHistoryMenuItem" data-action="rename" data-chat-id="${c.id}">
+              ✏️ Переименовать
+            </button>
+            <button class="chatHistoryMenuItem" data-action="pin" data-chat-id="${c.id}">
+              ${c.pinned ? "📍 Открепить" : "📌 Закрепить"}
+            </button>
+            <button class="chatHistoryMenuItem danger" data-action="delete" data-chat-id="${c.id}">
+              🗑️ Удалить
+            </button>
           </div>
         </div>
       `).join("")}
     </div>
   `;
 
-  openModal({ title: "История чатов", body, footer: `<button class="btn" data-close="1">Закрыть</button>` });
+  openModal({ 
+    title: "История чатов", 
+    body, 
+    footer: `<button class="btn" data-close="1">Закрыть</button>`,
+    size: "large"
+  });
 
-  elModalRoot.querySelectorAll("[data-open-chat]").forEach(row => {
-    row.onclick = async (e) => {
-      // если нажали на кнопку pin — не открываем чат
-      if (e.target && e.target.closest("[data-pin]")) return;
-      const id = row.getAttribute("data-open-chat");
+  // Обработчик создания нового чата
+  document.getElementById("createNewChatBtn").onclick = async () => {
+    closeModal();
+    await createNewChat();
+  };
+
+  // Обработчики открытия чатов
+  document.querySelectorAll("[data-open-chat]").forEach(item => {
+    item.onclick = async (e) => {
+      // Если клик на меню или кнопке меню - не открываем чат
+      if (e.target.closest("[data-menu]") || e.target.closest(".chatHistoryMenu")) return;
+      
+      const chatId = item.getAttribute("data-open-chat");
       closeModal();
-      await loadChat(id);
+      await loadChat(chatId);
     };
   });
 
-  elModalRoot.querySelectorAll("[data-pin]").forEach(btn => {
-    btn.onclick = async (e) => {
+  // Обработчики меню
+  document.querySelectorAll(".chatHistoryMenuBtn").forEach(btn => {
+    btn.onclick = (e) => {
       e.stopPropagation();
-      const id = btn.getAttribute("data-pin");
-      const rr = await API.post(`/api/chats/${id}/pin`, {});
-      if (!rr.ok) return toast("Ошибка", "Не удалось закрепить.");
-      toast("Готово", rr.pinned ? "Чат закреплён." : "Чат откреплён.");
-      openChatHistory();
+      const chatId = btn.getAttribute("data-menu");
+      const menu = document.getElementById(`menu-${chatId}`);
+      
+      // Закрываем все другие меню
+      document.querySelectorAll(".chatHistoryMenu").forEach(m => {
+        if (m !== menu) m.style.display = "none";
+      });
+      
+      // Переключаем текущее меню
+      menu.style.display = menu.style.display === "none" ? "block" : "none";
     };
   });
-}
 
-function groupChatsByDate(chats) {
-  const out = {};
-  chats.forEach(c => {
-    const d = new Date(c.created_at);
-    const key = d.toLocaleDateString();
-    out[key] = out[key] || [];
-    out[key].push(c);
+  // Обработчики действий в меню
+  document.querySelectorAll(".chatHistoryMenuItem").forEach(item => {
+    item.onclick = async (e) => {
+      e.stopPropagation();
+      const action = item.getAttribute("data-action");
+      const chatId = item.getAttribute("data-chat-id");
+      const chat = chats.find(c => c.id === chatId);
+      
+      // Закрываем меню
+      document.getElementById(`menu-${chatId}`).style.display = "none";
+      
+      if (action === "rename") {
+        await renameChat(chatId, chat.title);
+      } else if (action === "pin") {
+        await togglePinChat(chatId, !chat.pinned);
+      } else if (action === "delete") {
+        await deleteChat(chatId, chat.title);
+      }
+    };
   });
-  return out;
+
+  // Закрытие меню при клике вне
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.chatHistoryItem')) {
+      document.querySelectorAll('.chatHistoryMenu').forEach(menu => {
+        menu.style.display = 'none';
+      });
+    }
+  });
 }
 
 function openStats() {
@@ -1069,3 +1155,74 @@ document.addEventListener("click", async (e) => {
   }
 
 });
+
+// ===== Вспомогательные функции для истории чатов =====
+
+function formatChatDate(dateString) {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now - date;
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  
+  if (diffDays === 0) {
+    return date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+  } else if (diffDays === 1) {
+    return 'Вчера';
+  } else if (diffDays < 7) {
+    return diffDays + ' дней назад';
+  } else {
+    return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+  }
+}
+
+async function renameChat(chatId, currentTitle) {
+  const newTitle = prompt("Введите новое название чата:", currentTitle);
+  if (!newTitle || newTitle.trim() === "") return;
+  
+  const r = await API.post(`/api/chats/${chatId}/rename`, { title: newTitle.trim() });
+  if (!r.ok) return toast("Ошибка", "Не удалось переименовать чат.");
+  
+  toast("Готово", "Чат переименован.");
+  // Обновляем список чатов
+  openChatHistory();
+}
+
+async function togglePinChat(chatId, pin) {
+  const r = await API.post(`/api/chats/${chatId}/pin`, { pinned: pin });
+  if (!r.ok) return toast("Ошибка", "Не удалось изменить закрепление.");
+  
+  toast("Готово", pin ? "Чат закреплён." : "Чат откреплён.");
+  // Обновляем список чатов
+  openChatHistory();
+}
+
+async function deleteChat(chatId, chatTitle) {
+  const confirmed = confirm(`Вы уверены, что хотите удалить чат "${chatTitle}"?\n\nВсе сообщения будут удалены безвозвратно.`);
+  if (!confirmed) return;
+  
+  const r = await API.delete(`/api/chats/${chatId}`);
+  if (!r.ok) return toast("Ошибка", "Не удалось удалить чат.");
+  
+  toast("Готово", "Чат удалён.");
+  
+  // Если это был активный чат - создаём новый
+  if (state.activeChatId === chatId) {
+    state.activeChatId = null;
+    state.currentMessages = [];
+    await createNewChat();
+  } else {
+    // Обновляем список чатов
+    openChatHistory();
+  }
+}
+
+function groupChatsByDate(chats) {
+  const out = {};
+  chats.forEach(c => {
+    const d = new Date(c.created_at);
+    const key = d.toLocaleDateString();
+    out[key] = out[key] || [];
+    out[key].push(c);
+  });
+  return out;
+}
