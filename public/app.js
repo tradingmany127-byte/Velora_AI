@@ -16,7 +16,7 @@ const API = {
     const r = await fetch(url, { credentials: "include" });
     const data = await r.json();
     // 🚨 Не показываем UNAUTHORIZED если пользователь не авторизован
-    if (data.error === "UNAUTHORIZED" && !state.user) {
+    if (data.error === "UNAUTHORIZED" && state && !state.user) {
       data.ok = false;
       data._silentAuthError = true; // Помечаем как тихую ошибку
     }
@@ -31,7 +31,7 @@ const API = {
     });
     const data = await r.json();
     // 🚨 Не показываем UNAUTHORIZED если пользователь не авторизован
-    if (data.error === "UNAUTHORIZED" && !state.user) {
+    if (data.error === "UNAUTHORIZED" && state && !state.user) {
       data.ok = false;
       data._silentAuthError = true;
     }
@@ -44,7 +44,7 @@ const API = {
     });
     const data = await r.json();
     // 🚨 Не показываем UNAUTHORIZED если пользователь не авторизован
-    if (data.error === "UNAUTHORIZED" && !state.user) {
+    if (data.error === "UNAUTHORIZED" && state && !state.user) {
       data.ok = false;
       data._silentAuthError = true;
     }
