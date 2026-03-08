@@ -542,8 +542,8 @@ async function bootAfterAuth(source) {
 
   // 3) дальше — твой текущий сценарий (чтобы не сломать кнопку “Профиль”)
   if (typeof refreshProfileSilent === "function") {
-  await refreshProfileSilent();
-}
+    await refreshProfileSilent();
+  }
   closeModal?.();
 
   // если у тебя тут создаётся “первый чат” — оставляй, как было
