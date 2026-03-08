@@ -312,32 +312,95 @@ function openModal({ title, body, footer }) {
   elModalRoot.querySelectorAll("[data-close]").forEach(b => b.onclick = () => closeModal());
   elModalRoot.onclick = (e) => { if (e.target === elModalRoot) closeModal(); };
 }
+
 function closeModal() {
   elModalRoot.classList.add("hidden");
   elModalRoot.innerHTML = "";
 }
 
 function showWelcome(name) {
+  // Проверяем первый ли это визит
+  const isFirstVisit = !localStorage.getItem('velora_welcome_shown');
+  
+  // Если пользователь уже видел приветствие - не показываем
+  if (!isFirstVisit) {
+    renderChat();
+    return;
+  }
+  
   elWelcome.classList.remove("hidden");
   elWelcome.innerHTML = `
-    <div class="welcomePanel fadeIn">
+    <div class="welcomePanelPremium">
       <div class="welcomeGlow"></div>
       <h1>Добро пожаловать в Velora AI</h1>
-      <div class="welcomeText">
-        Velora — это ваш интеллектуальный AI-ассистент,
-        который помогает превращать идеи в результат.<br/><br/>
-        Здесь вы можете:<br/>
-        • анализировать идеи<br/>
-        • генерировать контент<br/>
-        • работать с AI инструментами<br/>
-        • создавать проекты быстрее<br/><br/>
-        Velora работает рядом с вами.
+      
+      <div class="welcomeMessages">
+        <div class="welcomeMessage" style="animation-delay: 0.6s">
+          <strong>Здесь идеи превращаются в проекты,</strong><br/>
+          а мысли — в реальные результаты.
+        </div>
+        <div class="welcomeMessage" style="animation-delay: 1.2s">
+          <strong>Velora создана, чтобы помогать вам</strong><br/>
+          думать быстрее, создавать больше и достигать целей легче.
+        </div>
+        <div class="welcomeMessage" style="animation-delay: 1.8s">
+          <strong>Velora — это больше чем инструмент.</strong><br/>
+          Это интеллектуальный помощник, который работает рядом с вами.
+        </div>
+        <div class="welcomeMessage" style="animation-delay: 2.4s">
+          <strong>Каждый большой проект начинается</strong><br/>
+          с одной идеи. Velora поможет вам превратить её во что-то большее.
+        </div>
+        <div class="welcomeMessage" style="animation-delay: 3.0s">
+          <strong>Вы здесь не случайно.</strong><br/>
+          Возможно именно сегодня начнётся ваш следующий большой проект.
+        </div>
+        <div class="welcomeMessage" style="animation-delay: 3.6s">
+          <strong>Velora готова помочь.</strong><br/>
+          Давайте создадим что-то по-настоящему интересное.
+        </div>
       </div>
-      <button class="btn primary welcomeBtn" id="startWorkBtn">Начать работу</button>
+      
+      <div class="welcomeButtons">
+        <button class="welcomeBtnPrimary" id="startWithVeloraBtn">
+          Начать с Velora
+          <div class="welcomeBtnSubtext">Создать аккаунт и открыть все возможности</div>
+        </button>
+        
+        <button class="welcomeBtnSecondary" id="justLookBtn">
+          Пока просто посмотреть
+          <div class="welcomeBtnSubtext">Открыть интерфейс и познакомиться с Velora</div>
+        </button>
+      </div>
     </div>
   `;
-  document.getElementById("startWorkBtn").onclick = () => { elWelcome.classList.add("hidden"); elWelcome.innerHTML=""; renderChat(); };
-  elWelcome.onclick = (e) => { if (e.target === elWelcome) { elWelcome.classList.add("hidden"); elWelcome.innerHTML=""; renderChat(); } };
+  
+  // Обработчики кнопок
+  document.getElementById("startWithVeloraBtn").onclick = () => {
+    elWelcome.classList.add("hidden");
+    elWelcome.innerHTML="";
+    // Открываем модальное окно регистрации
+    openAuthModal();
+  };
+  
+  document.getElementById("justLookBtn").onclick = () => {
+    elWelcome.classList.add("hidden");
+    elWelcome.innerHTML="";
+    // Открываем основной интерфейс в гостевом режиме
+    renderChat();
+  };
+  
+  // Закрытие по клику на фон
+  elWelcome.onclick = (e) => {
+    if (e.target === elWelcome) {
+      elWelcome.classList.add("hidden");
+      elWelcome.innerHTML="";
+      renderChat();
+    }
+  };
+  
+  // Сохраняем информацию о показе welcome
+  localStorage.setItem('velora_welcome_shown', 'true');
 }
 
 function openAuthModal() {
@@ -450,8 +513,7 @@ await u.reload();
     } catch {}
   }
 
-  // ЭТО ГЛАВНОЕ: твой UI-переключатель
-  showWelcome?.(state.user?.name || "друг");
+  // Просто показываем основной интерфейс без welcome экрана
   renderChat?.();
 }
 
@@ -814,22 +876,30 @@ function openPayments() {
 }
 
 async function boot() {
-  const me = await API.get("/api/me");
-  state.user = me.user;
-
-  if (state.user) {
-    await refreshProfileSilent();
-    // загрузим первый чат или создадим
-    const list = await API.get("/api/chats");
-    if (list.ok && list.chats?.length) {
-      state.activeChatId = list.chats[0].id;
-      await loadChat(state.activeChatId);
-      return;
+  // Сначала проверяем первый ли это визит
+  const isFirstVisit = !localStorage.getItem('velora_welcome_shown');
+  
+  onAuthStateChanged(firebaseAuth, async (user) => {
+    if (user) {
+      await refreshProfileSilent();
+      // загрузим первый чат или создадим
+      const list = await API.get("/api/chats");
+      if (list.ok && list.chats?.length) {
+        state.activeChatId = list.chats[0].id;
+        await loadChat(state.activeChatId);
+        return;
+      }
+      await createNewChat();
+    } else {
+      // Нет пользователя - показываем welcome только при первом заходе
+      if (isFirstVisit) {
+        showWelcome('гость');
+        return;
+      }
     }
-    await createNewChat();
-  }
 
-  renderChat();
+    renderChat();
+  });
 }
 
 boot();
