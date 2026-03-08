@@ -491,12 +491,14 @@ document.getElementById("loginBtn").onclick = async () => {
 }
 
 async function bootAfterAuth(source) {
+  if (window._bootAfterAuthCompleted) return;
+  
   // 1) берем пользователя из Firebase
   const u = firebaseAuth.currentUser;
-if (!u) return;
+  if (!u) return;
 
-// ✅ обязательно: обновляем данные пользователя (emailVerified)
-await u.reload();
+  // ✅ обязательно: обновляем данные пользователя (emailVerified)
+  await u.reload();
 
   // 2) кладем в state.user так, как ожидает твой UI
   state.user = {
@@ -525,6 +527,9 @@ await u.reload();
 
   // Просто показываем основной интерфейс без welcome экрана
   renderChat?.();
+  
+  // 🚨 ВАЖНО: Помечаем, что bootAfterAuth уже выполнен
+  window._bootAfterAuthCompleted = true;
 }
 
   
@@ -639,6 +644,8 @@ function openProfile() {
       state.profile = null;
       state.activeChatId = null;
       state.currentMessages = [];
+      // Очищаем флаг bootAfterAuth при выходе
+      window._bootAfterAuthCompleted = false;
       toast("Готово", "Вы вышли из аккаунта.");
       closeModal();
       renderChat();
@@ -974,6 +981,9 @@ async function boot() {
   
   // 2. Потом auth-логика - работает независимо от welcome
   onAuthStateChanged(firebaseAuth, async (user) => {
+    // 🚨 Пропускаем, если bootAfterAuth уже выполнен
+    if (window._bootAfterAuthCompleted) return;
+    
     if (user) {
       await refreshProfileSilent();
       // загрузим первый чат или создадим
