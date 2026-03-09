@@ -958,33 +958,57 @@ function openAiSettings() {
   const s = state.profile?.profile?.settings || { tone: "soft", length: "normal", language: "ru" };
 
   const body = `
-    <div class="sub">Настрой поведение Velora AI под себя. Эти параметры сохраняются в твоём профиле.</div>
+    <div class="sub">Настрой поведения Velora AI под себя. Эти параметры сохраняются в твоём профиле.</div>
     <div class="hr"></div>
 
     <label class="sub">Тон</label>
-    <select id="toneSel" class="input" style="margin-top:8px;">
-      <option value="soft" ${s.tone==="soft"?"selected":""}>Мягко</option>
-      <option value="neutral" ${s.tone==="neutral"?"selected":""}>Нейтрально</option>
-      <option value="tough" ${s.tone==="tough"?"selected":""}>Жёстко</option>
-    </select>
+    <div class="custom-dropdown" data-dropdown="tone">
+      <div class="custom-dropdown-trigger" data-value="${s.tone}">
+        <span>${s.tone === "soft" ? "Мягко" : s.tone === "neutral" ? "Нейтрально" : "Жёстко"}</span>
+        <svg class="custom-dropdown-arrow" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+        </svg>
+      </div>
+      <div class="custom-dropdown-menu">
+        <div class="custom-dropdown-option ${s.tone === "soft" ? "selected" : ""}" data-value="soft">Мягко</div>
+        <div class="custom-dropdown-option ${s.tone === "neutral" ? "selected" : ""}" data-value="neutral">Нейтрально</div>
+        <div class="custom-dropdown-option ${s.tone === "tough" ? "selected" : ""}" data-value="tough">Жёстко</div>
+      </div>
+    </div>
 
     <div style="height:10px;"></div>
 
     <label class="sub">Длина ответа</label>
-    <select id="lenSel" class="input" style="margin-top:8px;">
-      <option value="short" ${s.length==="short"?"selected":""}>Коротко</option>
-      <option value="normal" ${s.length==="normal"?"selected":""}>Нормально</option>
-      <option value="long" ${s.length==="long"?"selected":""}>Подробно</option>
-    </select>
+    <div class="custom-dropdown" data-dropdown="length">
+      <div class="custom-dropdown-trigger" data-value="${s.length}">
+        <span>${s.length === "short" ? "Коротко" : s.length === "normal" ? "Нормально" : "Подробно"}</span>
+        <svg class="custom-dropdown-arrow" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+        </svg>
+      </div>
+      <div class="custom-dropdown-menu">
+        <div class="custom-dropdown-option ${s.length === "short" ? "selected" : ""}" data-value="short">Коротко</div>
+        <div class="custom-dropdown-option ${s.length === "normal" ? "selected" : ""}" data-value="normal">Нормально</div>
+        <div class="custom-dropdown-option ${s.length === "long" ? "selected" : ""}" data-value="long">Подробно</div>
+      </div>
+    </div>
 
     <div style="height:10px;"></div>
 
     <label class="sub">Язык по умолчанию</label>
-    <select id="langSel" class="input" style="margin-top:8px;">
-      <option value="ru" ${s.language==="ru"?"selected":""}>Русский</option>
-      <option value="en" ${s.language==="en"?"selected":""}>English</option>
-      <option value="fr" ${s.language==="fr"?"selected":""}>Français</option>
-    </select>
+    <div class="custom-dropdown" data-dropdown="language">
+      <div class="custom-dropdown-trigger" data-value="${s.language}">
+        <span>${s.language === "ru" ? "Русский" : s.language === "en" ? "English" : "Français"}</span>
+        <svg class="custom-dropdown-arrow" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+        </svg>
+      </div>
+      <div class="custom-dropdown-menu">
+        <div class="custom-dropdown-option ${s.language === "ru" ? "selected" : ""}" data-value="ru">Русский</div>
+        <div class="custom-dropdown-option ${s.language === "en" ? "selected" : ""}" data-value="en">English</div>
+        <div class="custom-dropdown-option ${s.language === "fr" ? "selected" : ""}" data-value="fr">Français</div>
+      </div>
+    </div>
 
     <div class="hr"></div>
     <button class="btn primary" id="saveSettings" style="width:100%;">Сохранить</button>
@@ -992,12 +1016,15 @@ function openAiSettings() {
 
   openModal({ title: "Настройки AI", body, footer: `<button class="btn" data-close="1">Закрыть</button>` });
 
+  // Initialize custom dropdowns
+  initCustomDropdowns();
+
   const saveSettings = document.getElementById("saveSettings");
   if (saveSettings) {
     saveSettings.onclick = async () => {
-      const tone = document.getElementById("toneSel")?.value;
-      const length = document.getElementById("lenSel")?.value;
-      const language = document.getElementById("langSel")?.value;
+      const tone = document.querySelector('[data-dropdown="tone"] .custom-dropdown-trigger').dataset.value;
+      const length = document.querySelector('[data-dropdown="length"] .custom-dropdown-trigger').dataset.value;
+      const language = document.querySelector('[data-dropdown="language"] .custom-dropdown-trigger').dataset.value;
 
       const r = await API.post("/api/profile/settings", { tone, length, language });
       if (!r.ok) return toast("Ошибка", "Не удалось сохранить.");
@@ -1006,6 +1033,64 @@ function openAiSettings() {
       closeModal();
     };
   }
+}
+
+// Custom dropdown functionality
+function initCustomDropdowns() {
+  const dropdowns = document.querySelectorAll('.custom-dropdown');
+  
+  dropdowns.forEach(dropdown => {
+    const trigger = dropdown.querySelector('.custom-dropdown-trigger');
+    const menu = dropdown.querySelector('.custom-dropdown-menu');
+    const options = dropdown.querySelectorAll('.custom-dropdown-option');
+    
+    // Toggle dropdown
+    trigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      
+      // Close all other dropdowns
+      document.querySelectorAll('.custom-dropdown-menu.show').forEach(otherMenu => {
+        if (otherMenu !== menu) {
+          otherMenu.classList.remove('show');
+          otherMenu.closest('.custom-dropdown').querySelector('.custom-dropdown-trigger').classList.remove('active');
+        }
+      });
+      
+      // Toggle current dropdown
+      menu.classList.toggle('show');
+      trigger.classList.toggle('active');
+    });
+    
+    // Select option
+    options.forEach(option => {
+      option.addEventListener('click', (e) => {
+        e.stopPropagation();
+        
+        const value = option.dataset.value;
+        const text = option.textContent;
+        
+        // Update trigger
+        trigger.dataset.value = value;
+        trigger.querySelector('span').textContent = text;
+        
+        // Update selected state
+        options.forEach(opt => opt.classList.remove('selected'));
+        option.classList.add('selected');
+        
+        // Close dropdown
+        menu.classList.remove('show');
+        trigger.classList.remove('active');
+      });
+    });
+  });
+  
+  // Close dropdowns when clicking outside
+  document.addEventListener('click', () => {
+    document.querySelectorAll('.custom-dropdown-menu.show').forEach(menu => {
+      menu.classList.remove('show');
+      menu.closest('.custom-dropdown').querySelector('.custom-dropdown-trigger').classList.remove('active');
+    });
+  });
 }
 
 function openPayments() {
