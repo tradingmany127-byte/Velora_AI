@@ -1363,6 +1363,37 @@ async function boot() {
 boot();
 // ===== AUTH FUNCTIONS =====
 
+// Firebase session synchronization
+async function syncFirebaseSession() {
+  const user = firebaseAuth.currentUser;
+  if (!user) return false;
+
+  try {
+    const token = await user.getIdToken();
+
+    const response = await fetch("/api/auth/firebase-session", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      credentials: "include"
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Firebase session sync failed:", response.status, errorText);
+      return false;
+    }
+
+    const data = await response.json();
+    return !!data.ok;
+  } catch (error) {
+    console.error("Firebase session sync error:", error);
+    return false;
+  }
+}
+
 async function register(email, password) {
   try {
     const userCredential = await createUserWithEmailAndPassword(firebaseAuth, email, password);
@@ -1402,19 +1433,10 @@ async function login(email, password) {
       return;
     }
 
-    // Create server session via Firebase bridge
-    const token = await user.getIdToken();
-    const response = await fetch("/api/auth/firebase-session", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
-      }
-    });
-    
-    const result = await response.json();
-    if (!result.ok) {
-      throw new Error(result.error || "Failed to create session");
+    // Sync Firebase session with backend
+    const synced = await syncFirebaseSession();
+    if (!synced) {
+      throw new Error("Failed to sync session with backend");
     }
 
     toast("Успех", "Вход выполнен");
@@ -1455,19 +1477,10 @@ async function loginWithGoogle() {
     const result = await signInWithPopup(firebaseAuth, googleProvider);
     const user = result.user;
     
-    // Create server session via Firebase bridge
-    const token = await user.getIdToken();
-    const response = await fetch("/api/auth/firebase-session", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
-      }
-    });
-    
-    const sessionResult = await response.json();
-    if (!sessionResult.ok) {
-      throw new Error(sessionResult.error || "Failed to create session");
+    // Sync Firebase session with backend
+    const synced = await syncFirebaseSession();
+    if (!synced) {
+      throw new Error("Failed to sync session with backend");
     }
     
     toast("Успех", "Вход через Google выполнен");
@@ -1562,6 +1575,12 @@ document.addEventListener("click", async (e) => {
 
       if (firebaseAuth.currentUser?.emailVerified) {
         toast("Успех", "Почта подтверждена");
+        // Sync Firebase session with backend after email verification
+        const synced = await syncFirebaseSession();
+        if (!synced) {
+          toast("Ошибка", "Не удалось синхронизировать сессию. Попробуйте войти снова.");
+          return;
+        }
         await bootAfterAuth("firebase");
       } else {
         toast("Ошибка", "Почта ещё не подтверждена");
