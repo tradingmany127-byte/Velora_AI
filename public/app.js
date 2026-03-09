@@ -167,8 +167,8 @@ function renderChat() {
           </div>
 
           <div class="modeBar">
-            <div class="modeBtn ${state.activeMode==="free"?"active":""}" data-mode="free">Free • Local</div>
-            <div class="modeBtn ${state.activeMode==="pro"?"active":""}" data-mode="pro">Pro • GPT</div>
+            <div class="modeBtn ${state.activeMode==="free"?"active":""}" data-mode="free">Velora Free</div>
+            <div class="modeBtn ${state.activeMode==="pro"?"active":""}" data-mode="pro">Velora Pro</div>
           </div>
 
           <div class="hr"></div>
