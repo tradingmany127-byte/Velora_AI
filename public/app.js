@@ -344,6 +344,10 @@ async function sendMessage(text) {
 }
 
 function openModal({ title, body, footer }) {
+  // Блокируем скролл на body
+  document.body.style.overflow = 'hidden';
+  document.body.classList.add('no-scroll');
+  
   elModalRoot.classList.remove("hidden");
   elModalRoot.innerHTML = `
     <div class="modal fadeIn">
@@ -359,6 +363,10 @@ function openModal({ title, body, footer }) {
 }
 
 function closeModal() {
+  // Возвращаем скролл body
+  document.body.style.overflow = '';
+  document.body.classList.remove('no-scroll');
+  
   elModalRoot.classList.add("hidden");
   elModalRoot.innerHTML = "";
 }
