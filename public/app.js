@@ -212,7 +212,7 @@ function renderChat() {
       // Pro 
       if (m === "pro" && (!state.profile || !state.profile.profile?.limits?.pro)) {
         state.activeMode = "free";
-        toast("Pro ", "Velora+ Velora Full.");
+        toast("Velora Pro", "Этот чат доступен только для пользователей с подпиской Velora Pro или Velora Ultra.");
       }
       renderChat();
       renderMessages();
@@ -292,7 +292,7 @@ async function sendMessage(text) {
       return;
     }
     if (!state.profile?.profile?.limits?.pro) {
-      toast("Нужен Velora+ / Full", "В бесплатном плане Pro недоступен.");
+      toast("Velora Pro", "Этот чат доступен только для пользователей с подпиской Velora Pro или Velora Ultra.");
       state.activeMode = "free";
       renderChat();
       return;
