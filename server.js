@@ -3,6 +3,7 @@ import express from "express";
 import cookieParser from "cookie-parser";
 import bcrypt from "bcryptjs";
 import { nanoid } from "nanoid";
+import admin from "firebase-admin";
 
 import { db, initDb, ymdNow, planLimits } from "./db.js";
 import { makeMailer, sendVerifyCode } from "./mailer.js";
@@ -17,6 +18,17 @@ const __dirname = path.dirname(__filename);
 const publicDir = path.join(__dirname, "public");
 
 const PORT = Number(process.env.PORT || 3000);
+
+// Инициализация Firebase Admin SDK
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert({
+      projectId: "velora-ai-a6281",
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+    }),
+  });
+}
 
 initDb();
 
@@ -174,6 +186,97 @@ app.post("/api/auth/login", (req, res) => {
 app.post("/api/auth/logout", (req, res) => {
   clearSession(req, res);
   res.json({ ok: true });
+});
+
+// Firebase session bridge
+app.post("/api/auth/firebase-session", async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ ok: false, error: "UNAUTHORIZED" });
+    }
+
+    const token = authHeader.substring(7); // Remove "Bearer " prefix
+    
+    // Verify Firebase ID token
+    const decodedToken = await admin.auth().verifyIdToken(token);
+    const { email, name, uid, email_verified } = decodedToken;
+
+    // Find or create user in database
+    let user = db.prepare("SELECT * FROM users WHERE email = ?").get(email);
+    
+    if (!user) {
+      // Create new user
+      const userId = uid; // Use Firebase UID as user ID
+      const now = Date.now();
+      
+      db.prepare(`
+        INSERT INTO users (id, name, email, password_hash, verified, plan, avatar_seed, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(
+        userId,
+        name || email.split("@")[0], // Fallback to email prefix if no name
+        email,
+        "firebase_auth", // Special marker for Firebase users
+        email_verified ? 1 : 0,
+        "FREE",
+        Math.random().toString(36).substring(7), // Random avatar seed
+        now
+      );
+      
+      // Create default settings
+      db.prepare(`
+        INSERT INTO settings (user_id, tone, length, language)
+        VALUES (?, 'soft', 'normal', 'ru')
+      `).run(userId);
+      
+      user = db.prepare("SELECT * FROM users WHERE id = ?").get(userId);
+    } else {
+      // Update existing user if needed
+      const updates = [];
+      const values = [];
+      
+      if (email_verified && !user.verified) {
+        updates.push("verified = ?");
+        values.push(1);
+      }
+      
+      if (name && (!user.name || user.name !== name)) {
+        updates.push("name = ?");
+        values.push(name);
+      }
+      
+      if (updates.length > 0) {
+        values.push(user.id);
+        db.prepare(`UPDATE users SET ${updates.join(", ")} WHERE id = ?`).run(...values);
+        user = db.prepare("SELECT * FROM users WHERE id = ?").get(user.id);
+      }
+    }
+
+    // Create server session
+    setSession(res, user.id);
+    
+    // Return user data (same format as regular login)
+    res.json({ 
+      ok: true, 
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        plan: user.plan,
+        verified: Boolean(user.verified),
+        avatar_seed: user.avatar_seed,
+        created_at: user.created_at
+      }
+    });
+    
+  } catch (error) {
+    console.error("Firebase session bridge error:", error);
+    if (error.code === "auth/argument-error" || error.code === "auth/id-token-expired") {
+      return res.status(401).json({ ok: false, error: "UNAUTHORIZED" });
+    }
+    res.status(500).json({ ok: false, error: "INTERNAL_ERROR" });
+  }
 });
 
 // ---------------- PROFILE ----------------

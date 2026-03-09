@@ -23,9 +23,11 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+setPersistence(auth, browserSessionPersistence).catch(console.error);
 const googleProvider = new GoogleAuthProvider();
 
 export { 
+  auth,
   auth as firebaseAuth, 
   googleProvider, 
   sendEmailVerification,

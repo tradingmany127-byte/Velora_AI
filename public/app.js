@@ -1402,6 +1402,21 @@ async function login(email, password) {
       return;
     }
 
+    // Create server session via Firebase bridge
+    const token = await user.getIdToken();
+    const response = await fetch("/api/auth/firebase-session", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      }
+    });
+    
+    const result = await response.json();
+    if (!result.ok) {
+      throw new Error(result.error || "Failed to create session");
+    }
+
     toast("Успех", "Вход выполнен");
     loginTime = Date.now(); // Устанавливаем время входа
     await bootAfterAuth("firebase");
@@ -1429,7 +1444,7 @@ async function login(email, password) {
         message = "Введите корректный email";
         break;
       default:
-        message = "Ошибка входа";
+        message = error.message || "Ошибка входа";
     }
     toast("Ошибка", message);
   }
@@ -1439,6 +1454,22 @@ async function loginWithGoogle() {
   try {
     const result = await signInWithPopup(firebaseAuth, googleProvider);
     const user = result.user;
+    
+    // Create server session via Firebase bridge
+    const token = await user.getIdToken();
+    const response = await fetch("/api/auth/firebase-session", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      }
+    });
+    
+    const sessionResult = await response.json();
+    if (!sessionResult.ok) {
+      throw new Error(sessionResult.error || "Failed to create session");
+    }
+    
     toast("Успех", "Вход через Google выполнен");
     await bootAfterAuth("firebase");
     console.log("Google login:", result.user);
