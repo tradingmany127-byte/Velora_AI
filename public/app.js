@@ -18,11 +18,13 @@ const API = {
   async get(url) {
     const r = await fetch(url, { credentials: "include" });
     const data = await r.json();
-    // 🚨 Не показываем UNAUTHORIZED если пользователь не авторизован или недавно вошел
-    if (data.error === "UNAUTHORIZED" && (!state.user || (Date.now() - loginTime) < 2000)) {
-      data.ok = false;
-      data._silentAuthError = true; // Помечаем как тихую ошибку
+    
+    // Если пользователь авторизован и получает UNAUTHORIZED - это реальная ошибка сессии
+    if (data.error === "UNAUTHORIZED" && state.user) {
+      // Показываем реальную ошибку для авторизованных пользователей
+      data.sessionExpired = true;
     }
+    
     return data;
   },
   async post(url, body) {
@@ -33,11 +35,12 @@ const API = {
       credentials: "include"
     });
     const data = await r.json();
-    // 
-    if (data.error === "UNAUTHORIZED" && (!state.user || (Date.now() - loginTime) < 2000)) {
-      data.ok = false;
-      data._silentAuthError = true;
+    
+    // Если пользователь авторизован и получает UNAUTHORIZED - это реальная ошибка сессии
+    if (data.error === "UNAUTHORIZED" && state.user) {
+      data.sessionExpired = true;
     }
+    
     return data;
   },
   async delete(url) {
@@ -46,11 +49,12 @@ const API = {
       credentials: "include"
     });
     const data = await r.json();
-    // 
-    if (data.error === "UNAUTHORIZED" && (!state.user || (Date.now() - loginTime) < 2000)) {
-      data.ok = false;
-      data._silentAuthError = true;
+    
+    // Если пользователь авторизован и получает UNAUTHORIZED - это реальная ошибка сессии
+    if (data.error === "UNAUTHORIZED" && state.user) {
+      data.sessionExpired = true;
     }
+    
     return data;
   }
 };
@@ -267,37 +271,65 @@ async function createNewChat() {
   }
 
   // Для авторизованных пользователей создаем чат на сервере
-  const r = await API.post("/api/chats/new", { title: "Новый чат" });
-  if (!r.ok) {
-    if (r._silentAuthError) return; // Не показываем UNAUTHORIZED для гостей
+  try {
+    const r = await API.post("/api/chats/new", { title: "Новый чат" });
     
-    // Показываем человеческое сообщение вместо технической ошибки
-    if (r.error === "UNAUTHORIZED") {
-      toast("Сессия истекла", "Пожалуйста, войдите снова.");
-      return;
+    if (!r.ok) {
+      // Обрабатываем конкретные ошибки
+      if (r.sessionExpired) {
+        toast("Сессия истекла", "Пожалуйста, войдите снова.");
+        return;
+      }
+      
+      if (r.error === "UNAUTHORIZED") {
+        toast("Ошибка авторизации", "Пожалуйста, войдите снова.");
+        return;
+      }
+      
+      return toast("Ошибка", r.error || "Не удалось создать чат.");
     }
     
-    return toast("Ошибка", r.error || "Не удалось создать чат.");
+    state.activeChatId = r.chatId;
+    state.currentMessages = [];
+    toast("Готово", "Создал новый чат.");
+    renderChat();
+    
+  } catch (error) {
+    console.error("Create chat error:", error);
+    toast("Ошибка", "Не удалось создать чат. Попробуйте снова.");
   }
-  
-  state.activeChatId = r.chatId;
-  state.currentMessages = [];
-  toast("Готово", "Создал новый чат.");
-  renderChat();
 }
 
 async function loadChat(chatId) {
-  const r = await API.get(`/api/chats/${chatId}`);
-  if (!r.ok) {
-    if (r._silentAuthError) return; // 🚨 Не показываем UNAUTHORIZED для гостей
-    return toast("Ошибка", r.error || "Не удалось открыть чат.");
+  try {
+    const r = await API.get(`/api/chats/${chatId}`);
+    
+    if (!r.ok) {
+      // Обрабатываем конкретные ошибки
+      if (r.sessionExpired) {
+        toast("Сессия истекла", "Пожалуйста, войдите снова.");
+        return;
+      }
+      
+      if (r.error === "UNAUTHORIZED") {
+        toast("Ошибка авторизации", "Пожалуйста, войдите снова.");
+        return;
+      }
+      
+      return toast("Ошибка", r.error || "Не удалось открыть чат.");
+    }
+    
+    state.activeChatId = chatId;
+    state.currentMessages = (r.messages || []).map(x => ({
+      role: x.role === "user" ? "user" : "assistant",
+      content: x.content
+    }));
+    renderChat();
+    
+  } catch (error) {
+    console.error("Load chat error:", error);
+    toast("Ошибка", "Не удалось открыть чат. Попробуйте снова.");
   }
-  state.activeChatId = chatId;
-  state.currentMessages = (r.messages || []).map(x => ({
-    role: x.role === "user" ? "user" : "assistant",
-    content: x.content
-  }));
-  renderChat();
 }
 
 async function sendMessage(text) {
@@ -787,161 +819,191 @@ async function openChatHistory() {
   }
 
   // Для авторизованных пользователей загружаем историю
-  const r = await API.get("/api/chats");
-  if (!r.ok) {
-    if (r._silentAuthError) return; // Не показываем UNAUTHORIZED для гостей
+  try {
+    const r = await API.get("/api/chats");
     
-    // Показываем человеческое сообщение вместо технической ошибки
-    if (r.error === "UNAUTHORIZED") {
-      toast("Сессия истекла", "Пожалуйста, войдите снова.");
-      return;
+    if (!r.ok) {
+      // Обрабатываем конкретные ошибки
+      if (r.sessionExpired) {
+        toast("Сессия истекла", "Пожалуйста, войдите снова.");
+        return;
+      }
+      
+      if (r.error === "UNAUTHORIZED") {
+        toast("Ошибка авторизации", "Пожалуйста, войдите снова.");
+        return;
+      }
+      
+      return toast("Ошибка", r.error || "Не удалось загрузить историю чатов.");
     }
-    
-    return toast("Ошибка", "Не удалось загрузить историю чатов.");
-  }
 
-  const chats = r.chats || [];
+    const chats = r.chats || [];
 
-  // Сортируем: закреплённые вверху, потом по дате обновления
-  const sortedChats = [...chats].sort((a, b) => {
-    if (a.pinned && !b.pinned) return -1;
-    if (!a.pinned && b.pinned) return 1;
-    return new Date(b.updated_at) - new Date(a.updated_at);
-  });
+    // Сортируем: закреплённые вверху, потом по дате обновления
+    const sortedChats = [...chats].sort((a, b) => {
+      if (a.pinned && !b.pinned) return -1;
+      if (!a.pinned && b.pinned) return 1;
+      return new Date(b.updated_at) - new Date(a.updated_at);
+    });
 
-  const body = `
-    <div class="chatHistoryHeader">
-      <div class="sub">У вас ${chats.length} чатов. Закреплённые всегда вверху.</div>
-      <button class="btn primary" id="createNewChatBtn" style="margin-top:12px;">
-        ➕ Создать новый чат
-      </button>
-    </div>
-    
-    <div class="hr"></div>
-    
-    <div class="chatHistoryList">
-      ${sortedChats.length === 0 ? `
-        <div class="emptyState" style="text-align:center; padding:40px; color:var(--muted);">
-          <div style="font-size:48px; margin-bottom:16px;">💬</div>
-          <div style="font-size:18px; margin-bottom:8px;">Нет чатов</div>
-          <div style="font-size:14px;">Начните общение с Velora AI</div>
+    const body = `
+      <div class="chatHistoryHeader">
+        <div class="sub">У вас ${chats.length} чатов. Закреплённые всегда вверху.</div>
+        <div style="margin-top:12px;">
+          <input id="chatSearchInput" class="input" placeholder="🔍 Поиск по названию чата..." style="width:100%;">
         </div>
-      ` : sortedChats.map(c => `
-        <div class="chatHistoryItem" data-chat-id="${c.id}" data-pinned="${c.pinned}">
-          <div class="chatHistoryMain" data-open-chat="${c.id}">
-            <div class="chatHistoryIcon">
-              ${c.pinned ? "📌" : "💬"}
-            </div>
-            
-            <div class="chatHistoryContent">
-              <div class="chatHistoryTitle">
-                ${escapeHtml(c.title)}
-                <div class="chatHistoryActions">
-                  <button class="chatHistoryMenuBtn" data-menu="${c.id}">⋮</button>
+        <button class="btn primary" id="createNewChatBtn" style="margin-top:12px;">
+          ➕ Создать новый чат
+        </button>
+      </div>
+      
+      <div class="hr"></div>
+      
+      <div class="chatHistoryList" id="chatHistoryList">
+        ${sortedChats.length === 0 ? `
+          <div class="emptyState" style="text-align:center; padding:40px; color:var(--muted);">
+            <div style="font-size:48px; margin-bottom:16px;">💬</div>
+            <div style="font-size:18px; margin-bottom:8px;">Нет чатов</div>
+            <div style="font-size:14px;">Начните общение с Velora AI</div>
+          </div>
+        ` : sortedChats.map(c => `
+          <div class="chatHistoryItem" data-chat-id="${c.id}" data-pinned="${c.pinned}" data-title="${escapeHtml(c.title).toLowerCase()}">
+            <div class="chatHistoryMain" data-open-chat="${c.id}">
+              <div class="chatHistoryIcon">
+                ${c.pinned ? "📌" : "💬"}
+              </div>
+              
+              <div class="chatHistoryContent">
+                <div class="chatHistoryTitle">
+                  ${escapeHtml(c.title)}
+                  <div class="chatHistoryActions">
+                    <button class="chatHistoryMenuBtn" data-menu="${c.id}">⋮</button>
+                  </div>
+                </div>
+                
+                <div class="chatHistoryPreview">
+                  ${c.last_message ? escapeHtml(c.last_message).substring(0, 100) + (c.last_message.length > 100 ? "..." : "") : "Нет сообщений"}
+                </div>
+                
+                <div class="chatHistoryMeta">
+                  <span class="chatHistoryDate">${formatChatDate(c.updated_at)}</span>
+                  <span class="chatHistoryMessageCount">${c.message_count || 0} сообщений</span>
                 </div>
               </div>
-              
-              <div class="chatHistoryPreview">
-                ${c.last_message ? escapeHtml(c.last_message).substring(0, 100) + (c.last_message.length > 100 ? "..." : "") : "Нет сообщений"}
-              </div>
-              
-              <div class="chatHistoryMeta">
-                <span class="chatHistoryDate">${formatChatDate(c.updated_at)}</span>
-                <span class="chatHistoryMessageCount">${c.message_count || 0} сообщений</span>
-              </div>
+            </div>
+            
+            <div class="chatHistoryMenu" id="menu-${c.id}" style="display:none;">
+              <button class="chatHistoryMenuItem" data-action="rename" data-chat-id="${c.id}">
+                ✏️ Переименовать
+              </button>
+              <button class="chatHistoryMenuItem" data-action="pin" data-chat-id="${c.id}">
+                ${c.pinned ? "📍 Открепить" : "📌 Закрепить"}
+              </button>
+              <button class="chatHistoryMenuItem danger" data-action="delete" data-chat-id="${c.id}">
+                🗑️ Удалить
+              </button>
             </div>
           </div>
-          
-          <div class="chatHistoryMenu" id="menu-${c.id}" style="display:none;">
-            <button class="chatHistoryMenuItem" data-action="rename" data-chat-id="${c.id}">
-              ✏️ Переименовать
-            </button>
-            <button class="chatHistoryMenuItem" data-action="pin" data-chat-id="${c.id}">
-              ${c.pinned ? "📍 Открепить" : "📌 Закрепить"}
-            </button>
-            <button class="chatHistoryMenuItem danger" data-action="delete" data-chat-id="${c.id}">
-              🗑️ Удалить
-            </button>
-          </div>
-        </div>
-      `).join("")}
-    </div>
-  `;
+        `).join("")}
+      </div>
+    `;
 
-  openModal({ 
-    title: "История чатов", 
-    body, 
-    footer: `<button class="btn" data-close="1">Закрыть</button>`,
-    size: "large"
-  });
+    openModal({ 
+      title: "История чатов", 
+      body, 
+      footer: `<button class="btn" data-close="1">Закрыть</button>`,
+      size: "large"
+    });
 
-  // Обработчик создания нового чата
-  const createNewChatBtn = document.getElementById("createNewChatBtn");
-  if (createNewChatBtn) {
-    createNewChatBtn.onclick = async () => {
-      closeModal();
-      await createNewChat();
-    };
-  }
-
-  // Обработчики открытия чатов
-  document.querySelectorAll("[data-open-chat]").forEach(item => {
-    item.onclick = async (e) => {
-      // Если клик на меню или кнопке меню - не открываем чат
-      if (e.target.closest("[data-menu]") || e.target.closest(".chatHistoryMenu")) return;
-      
-      const chatId = item.getAttribute("data-open-chat");
-      closeModal();
-      await loadChat(chatId);
-    };
-  });
-
-  // Обработчики меню
-  document.querySelectorAll(".chatHistoryMenuBtn").forEach(btn => {
-    btn.onclick = (e) => {
-      e.stopPropagation();
-      const chatId = btn.getAttribute("data-menu");
-      const menu = document.getElementById(`menu-${chatId}`);
-      
-      // Закрываем все другие меню
-      document.querySelectorAll(".chatHistoryMenu").forEach(m => {
-        if (m !== menu) m.style.display = "none";
-      });
-      
-      // Переключаем текущее меню
-      menu.style.display = menu.style.display === "none" ? "block" : "none";
-    };
-  });
-
-  // Обработчики действий в меню
-  document.querySelectorAll(".chatHistoryMenuItem").forEach(item => {
-    item.onclick = async (e) => {
-      e.stopPropagation();
-      const action = item.getAttribute("data-action");
-      const chatId = item.getAttribute("data-chat-id");
-      const chat = chats.find(c => c.id === chatId);
-      
-      // Закрываем меню
-      document.getElementById(`menu-${chatId}`).style.display = "none";
-      
-      if (action === "rename") {
-        await renameChat(chatId, chat.title);
-      } else if (action === "pin") {
-        await togglePinChat(chatId, !chat.pinned);
-      } else if (action === "delete") {
-        await deleteChat(chatId, chat.title);
-      }
-    };
-  });
-
-  // Закрытие меню при клике вне
-  document.addEventListener('click', (e) => {
-    if (!e.target.closest('.chatHistoryItem')) {
-      document.querySelectorAll('.chatHistoryMenu').forEach(menu => {
-        menu.style.display = 'none';
+    // Добавляем поиск
+    const searchInput = document.getElementById("chatSearchInput");
+    if (searchInput) {
+      searchInput.addEventListener("input", (e) => {
+        const query = e.target.value.toLowerCase();
+        const items = document.querySelectorAll(".chatHistoryItem");
+        
+        items.forEach(item => {
+          const title = item.dataset.title || "";
+          if (title.includes(query)) {
+            item.style.display = "block";
+          } else {
+            item.style.display = "none";
+          }
+        });
       });
     }
-  });
+
+    // Обработчик создания нового чата
+    const createNewChatBtn = document.getElementById("createNewChatBtn");
+    if (createNewChatBtn) {
+      createNewChatBtn.onclick = async () => {
+        closeModal();
+        await createNewChat();
+      };
+    }
+
+    // Обработчики открытия чатов
+    document.querySelectorAll("[data-open-chat]").forEach(item => {
+      item.onclick = async (e) => {
+        // Если клик на меню или кнопке меню - не открываем чат
+        if (e.target.closest("[data-menu]") || e.target.closest(".chatHistoryMenu")) return;
+        
+        const chatId = item.getAttribute("data-open-chat");
+        closeModal();
+        await loadChat(chatId);
+      };
+    });
+
+    // Обработчики меню
+    document.querySelectorAll(".chatHistoryMenuBtn").forEach(btn => {
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        const chatId = btn.getAttribute("data-menu");
+        const menu = document.getElementById(`menu-${chatId}`);
+        
+        // Закрываем все другие меню
+        document.querySelectorAll(".chatHistoryMenu").forEach(m => {
+          if (m !== menu) m.style.display = "none";
+        });
+        
+        // Переключаем текущее меню
+        menu.style.display = menu.style.display === "none" ? "block" : "none";
+      };
+    });
+
+    // Обработчики действий в меню
+    document.querySelectorAll(".chatHistoryMenuItem").forEach(item => {
+      item.onclick = async (e) => {
+        e.stopPropagation();
+        const action = item.getAttribute("data-action");
+        const chatId = item.getAttribute("data-chat-id");
+        const chat = chats.find(c => c.id === chatId);
+        
+        // Закрываем меню
+        document.getElementById(`menu-${chatId}`).style.display = "none";
+        
+        if (action === "rename") {
+          await renameChat(chatId, chat.title);
+        } else if (action === "pin") {
+          await togglePinChat(chatId, !chat.pinned);
+        } else if (action === "delete") {
+          await deleteChat(chatId, chat.title);
+        }
+      };
+    });
+
+    // Закрытие меню при клике вне
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.chatHistoryItem')) {
+        document.querySelectorAll('.chatHistoryMenu').forEach(menu => {
+          menu.style.display = 'none';
+        });
+      }
+    });
+  } catch (error) {
+    console.error("Chat history error:", error);
+    toast("Ошибка", "Не удалось загрузить историю чатов. Попробуйте снова.");
+  }
 }
 
 function openStats() {
