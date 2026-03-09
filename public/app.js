@@ -256,11 +256,30 @@ function renderMessages() {
 }
 
 async function createNewChat() {
+  // Если пользователь не авторизован, создаем гостевой чат
+  if (!state.user) {
+    // Для гостевого режима просто очищаем текущую сессию
+    state.guestSession = [];
+    state.activeChatId = null;
+    toast("Готово", "Новый гостевой чат создан.");
+    renderChat();
+    return;
+  }
+
+  // Для авторизованных пользователей создаем чат на сервере
   const r = await API.post("/api/chats/new", { title: "Новый чат" });
   if (!r.ok) {
-    if (r._silentAuthError) return; // 🚨 Не показываем UNAUTHORIZED для гостей
+    if (r._silentAuthError) return; // Не показываем UNAUTHORIZED для гостей
+    
+    // Показываем человеческое сообщение вместо технической ошибки
+    if (r.error === "UNAUTHORIZED") {
+      toast("Сессия истекла", "Пожалуйста, войдите снова.");
+      return;
+    }
+    
     return toast("Ошибка", r.error || "Не удалось создать чат.");
   }
+  
   state.activeChatId = r.chatId;
   state.currentMessages = [];
   toast("Готово", "Создал новый чат.");
@@ -731,10 +750,54 @@ function openProfile() {
 }
 
 async function openChatHistory() {
+  // Если пользователь не авторизован, показываем гостевое состояние
+  if (!state.user) {
+    const body = `
+      <div class="chatHistoryHeader">
+        <div class="sub">В гостевом режиме история чатов не сохраняется.</div>
+        <button class="btn primary" id="registerFromHistoryBtn" style="margin-top:12px;">
+          📝 Создать аккаунт
+        </button>
+      </div>
+      
+      <div class="hr"></div>
+      
+      <div class="emptyState" style="text-align:center; padding:40px; color:var(--muted);">
+        <div style="font-size:48px; margin-bottom:16px;">👤</div>
+        <div style="font-size:18px; margin-bottom:8px;">Гостевой режим</div>
+        <div style="font-size:14px;">Создайте аккаунт чтобы сохранять историю чатов</div>
+      </div>
+    `;
+
+    openModal({ 
+      title: "История чатов", 
+      body, 
+      footer: `<button class="btn" data-close="1">Закрыть</button>`,
+      size: "large"
+    });
+
+    const registerBtn = document.getElementById("registerFromHistoryBtn");
+    if (registerBtn) {
+      registerBtn.onclick = () => {
+        closeModal();
+        openAuthModal();
+      };
+    }
+    return;
+  }
+
+  // Для авторизованных пользователей загружаем историю
   const r = await API.get("/api/chats");
   if (!r.ok) {
     if (r._silentAuthError) return; // Не показываем UNAUTHORIZED для гостей
-    return toast("Ошибка", "Не удалось загрузить историю.");
+    
+    // Показываем человеческое сообщение вместо технической ошибки
+    if (r.error === "UNAUTHORIZED") {
+      toast("Сессия истекла", "Пожалуйста, войдите снова.");
+      return;
+    }
+    
+    return toast("Ошибка", "Не удалось загрузить историю чатов.");
   }
 
   const chats = r.chats || [];
