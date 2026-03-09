@@ -578,8 +578,13 @@ async function bootAfterAuth(source) {
 
 async function refreshProfileSilent() {
   if (!state.user) return;
-  const r = await API.get("/api/profile");
-  if (r.ok) state.profile = r;
+  try {
+    const r = await API.get("/api/profile");
+    if (r.ok) state.profile = r;
+  } catch (error) {
+    // Не показываем ошибку UNAUTHORIZED при первом входе
+    console.log("Profile refresh silent error:", error);
+  }
 }
 
 function planLabel(plan) {
@@ -1117,17 +1122,26 @@ async function login(email, password) {
     console.error(error);
     let message = "Ошибка входа";
     switch (error.code) {
-      case 'auth/user-not-found':
-        message = "Пользователь не найден";
+      case 'auth/invalid-credential':
+        message = "Неверный email или пароль.";
         break;
       case 'auth/wrong-password':
-        message = "Неверный пароль";
+        message = "Неверный пароль.";
+        break;
+      case 'auth/user-not-found':
+        message = "Аккаунт с таким email не найден.";
+        break;
+      case 'auth/too-many-requests':
+        message = "Слишком много попыток входа. Попробуйте позже.";
+        break;
+      case 'auth/network-request-failed':
+        message = "Ошибка соединения. Проверьте интернет.";
         break;
       case 'auth/invalid-email':
         message = "Введите корректный email";
         break;
       default:
-        message = error.message;
+        message = "Ошибка входа";
     }
     toast("Ошибка", message);
   }
