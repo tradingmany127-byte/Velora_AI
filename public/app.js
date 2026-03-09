@@ -16,7 +16,22 @@ let loginTime = 0;
 
 const API = {
   async get(url) {
-    const r = await fetch(url, { credentials: "include" });
+    const headers = { "Content-Type": "application/json" };
+    
+    // Добавляем Authorization header если пользователь авторизован
+    if (state.user && firebaseAuth.currentUser) {
+      try {
+        const token = await firebaseAuth.currentUser.getIdToken();
+        headers["Authorization"] = `Bearer ${token}`;
+      } catch (error) {
+        console.error("Failed to get auth token:", error);
+      }
+    }
+    
+    const r = await fetch(url, { 
+      headers,
+      credentials: "include" 
+    });
     const data = await r.json();
     
     // Если пользователь авторизован и получает UNAUTHORIZED - это реальная ошибка сессии
@@ -28,9 +43,21 @@ const API = {
     return data;
   },
   async post(url, body) {
+    const headers = { "Content-Type": "application/json" };
+    
+    // Добавляем Authorization header если пользователь авторизован
+    if (state.user && firebaseAuth.currentUser) {
+      try {
+        const token = await firebaseAuth.currentUser.getIdToken();
+        headers["Authorization"] = `Bearer ${token}`;
+      } catch (error) {
+        console.error("Failed to get auth token:", error);
+      }
+    }
+    
     const r = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify(body || {}),
       credentials: "include"
     });
@@ -44,8 +71,21 @@ const API = {
     return data;
   },
   async delete(url) {
+    const headers = {};
+    
+    // Добавляем Authorization header если пользователь авторизован
+    if (state.user && firebaseAuth.currentUser) {
+      try {
+        const token = await firebaseAuth.currentUser.getIdToken();
+        headers["Authorization"] = `Bearer ${token}`;
+      } catch (error) {
+        console.error("Failed to get auth token:", error);
+      }
+    }
+    
     const r = await fetch(url, {
       method: "DELETE",
+      headers,
       credentials: "include"
     });
     const data = await r.json();
@@ -260,9 +300,33 @@ function renderMessages() {
 }
 
 async function createNewChat() {
-  // Если пользователь не авторизован, создаем гостевой чат
-  if (!state.user) {
-    // Для гостевого режима просто очищаем текущую сессию
+  // Если пользователь не авторизован, создаем локальный гостевой чат
+  if (!state.user || !firebaseAuth.currentUser) {
+    state.guestSession = [];
+    state.activeChatId = null;
+    toast("Готово", "Новый гостевой чат создан.");
+    renderChat();
+    return;
+  }
+
+  // Проверяем наличие токена перед API вызовом
+  try {
+    const token = await firebaseAuth.currentUser.getIdToken();
+    if (!token) {
+      // Если токена нет, переключаем в гостевой режим
+      state.user = null;
+      state.profile = null;
+      state.guestSession = [];
+      state.activeChatId = null;
+      toast("Готово", "Новый гостевой чат создан.");
+      renderChat();
+      return;
+    }
+  } catch (error) {
+    console.error("Token check failed:", error);
+    // Переключаем в гостевой режим при ошибке токена
+    state.user = null;
+    state.profile = null;
     state.guestSession = [];
     state.activeChatId = null;
     toast("Готово", "Новый гостевой чат создан.");
@@ -275,14 +339,14 @@ async function createNewChat() {
     const r = await API.post("/api/chats/new", { title: "Новый чат" });
     
     if (!r.ok) {
-      // Обрабатываем конкретные ошибки
-      if (r.sessionExpired) {
-        toast("Сессия истекла", "Пожалуйста, войдите снова.");
-        return;
-      }
-      
       if (r.error === "UNAUTHORIZED") {
-        toast("Ошибка авторизации", "Пожалуйста, войдите снова.");
+        // Если получили UNAUTHORIZED, переключаем в гостевой режим
+        state.user = null;
+        state.profile = null;
+        state.guestSession = [];
+        state.activeChatId = null;
+        toast("Готово", "Новый гостевой чат создан.");
+        renderChat();
         return;
       }
       
@@ -301,18 +365,33 @@ async function createNewChat() {
 }
 
 async function loadChat(chatId) {
+  // Проверяем наличие токена перед API вызовом
+  if (!state.user || !firebaseAuth.currentUser) {
+    toast("Ошибка", "Загрузка чатов доступна после входа в аккаунт.");
+    return;
+  }
+
+  try {
+    const token = await firebaseAuth.currentUser.getIdToken();
+    if (!token) {
+      toast("Ошибка", "Загрузка чатов доступна после входа в аккаунт.");
+      return;
+    }
+  } catch (error) {
+    console.error("Token check failed:", error);
+    toast("Ошибка", "Загрузка чатов доступна после входа в аккаунт.");
+    return;
+  }
+
   try {
     const r = await API.get(`/api/chats/${chatId}`);
     
     if (!r.ok) {
-      // Обрабатываем конкретные ошибки
-      if (r.sessionExpired) {
-        toast("Сессия истекла", "Пожалуйста, войдите снова.");
-        return;
-      }
-      
       if (r.error === "UNAUTHORIZED") {
-        toast("Ошибка авторизации", "Пожалуйста, войдите снова.");
+        // Если получили UNAUTHORIZED, переключаем в гостевой режим
+        state.user = null;
+        state.profile = null;
+        toast("Ошибка", "Загрузка чатов доступна после входа в аккаунт.");
         return;
       }
       
@@ -782,11 +861,11 @@ function openProfile() {
 }
 
 async function openChatHistory() {
-  // Если пользователь не авторизован, показываем гостевое состояние
-  if (!state.user) {
+  // Если пользователь не авторизован или нет токена, показываем гостевое состояние
+  if (!state.user || !firebaseAuth.currentUser) {
     const body = `
       <div class="chatHistoryHeader">
-        <div class="sub">В гостевом режиме история чатов не сохраняется.</div>
+        <div class="sub">История чатов доступна после входа в аккаунт.</div>
         <button class="btn primary" id="registerFromHistoryBtn" style="margin-top:12px;">
           📝 Создать аккаунт
         </button>
@@ -797,7 +876,86 @@ async function openChatHistory() {
       <div class="emptyState" style="text-align:center; padding:40px; color:var(--muted);">
         <div style="font-size:48px; margin-bottom:16px;">👤</div>
         <div style="font-size:18px; margin-bottom:8px;">Гостевой режим</div>
-        <div style="font-size:14px;">Создайте аккаунт чтобы сохранять историю чатов</div>
+        <div style="font-size:14px;">Войдите в аккаунт чтобы сохранять историю чатов</div>
+      </div>
+    `;
+
+    openModal({ 
+      title: "История чатов", 
+      body, 
+      footer: `<button class="btn" data-close="1">Закрыть</button>`,
+      size: "large"
+    });
+
+    const registerBtn = document.getElementById("registerFromHistoryBtn");
+    if (registerBtn) {
+      registerBtn.onclick = () => {
+        closeModal();
+        openAuthModal();
+      };
+    }
+    return;
+  }
+
+  // Проверяем наличие токена перед API вызовом
+  try {
+    const token = await firebaseAuth.currentUser.getIdToken();
+    if (!token) {
+      // Если токена нет, переключаем в гостевой режим
+      state.user = null;
+      state.profile = null;
+      const body = `
+        <div class="chatHistoryHeader">
+          <div class="sub">История чатов доступна после входа в аккаунт.</div>
+          <button class="btn primary" id="registerFromHistoryBtn" style="margin-top:12px;">
+            📝 Создать аккаунт
+          </button>
+        </div>
+        
+        <div class="hr"></div>
+        
+        <div class="emptyState" style="text-align:center; padding:40px; color:var(--muted);">
+          <div style="font-size:48px; margin-bottom:16px;">👤</div>
+          <div style="font-size:18px; margin-bottom:8px;">Гостевой режим</div>
+          <div style="font-size:14px;">Войдите в аккаунт чтобы сохранять историю чатов</div>
+        </div>
+      `;
+
+      openModal({ 
+        title: "История чатов", 
+        body, 
+        footer: `<button class="btn" data-close="1">Закрыть</button>`,
+        size: "large"
+      });
+
+      const registerBtn = document.getElementById("registerFromHistoryBtn");
+      if (registerBtn) {
+        registerBtn.onclick = () => {
+          closeModal();
+          openAuthModal();
+        };
+      }
+      return;
+    }
+  } catch (error) {
+    console.error("Token check failed:", error);
+    // Переключаем в гостевой режим при ошибке токена
+    state.user = null;
+    state.profile = null;
+    const body = `
+      <div class="chatHistoryHeader">
+        <div class="sub">История чатов доступна после входа в аккаунт.</div>
+        <button class="btn primary" id="registerFromHistoryBtn" style="margin-top:12px;">
+          📝 Создать аккаунт
+        </button>
+      </div>
+      
+      <div class="hr"></div>
+      
+      <div class="emptyState" style="text-align:center; padding:40px; color:var(--muted);">
+        <div style="font-size:48px; margin-bottom:16px;">👤</div>
+        <div style="font-size:18px; margin-bottom:8px;">Гостевой режим</div>
+        <div style="font-size:14px;">Войдите в аккаунт чтобы сохранять историю чатов</div>
       </div>
     `;
 
@@ -823,14 +981,41 @@ async function openChatHistory() {
     const r = await API.get("/api/chats");
     
     if (!r.ok) {
-      // Обрабатываем конкретные ошибки
-      if (r.sessionExpired) {
-        toast("Сессия истекла", "Пожалуйста, войдите снова.");
-        return;
-      }
-      
       if (r.error === "UNAUTHORIZED") {
-        toast("Ошибка авторизации", "Пожалуйста, войдите снова.");
+        // Если получили UNAUTHORIZED, переключаем в гостевой режим
+        state.user = null;
+        state.profile = null;
+        const body = `
+          <div class="chatHistoryHeader">
+            <div class="sub">История чатов доступна после входа в аккаунт.</div>
+            <button class="btn primary" id="registerFromHistoryBtn" style="margin-top:12px;">
+              📝 Создать аккаунт
+            </button>
+          </div>
+          
+          <div class="hr"></div>
+          
+          <div class="emptyState" style="text-align:center; padding:40px; color:var(--muted);">
+            <div style="font-size:48px; margin-bottom:16px;">👤</div>
+            <div style="font-size:18px; margin-bottom:8px;">Гостевой режим</div>
+            <div style="font-size:14px;">Войдите в аккаунт чтобы сохранять историю чатов</div>
+          </div>
+        `;
+
+        openModal({ 
+          title: "История чатов", 
+          body, 
+          footer: `<button class="btn" data-close="1">Закрыть</button>`,
+          size: "large"
+        });
+
+        const registerBtn = document.getElementById("registerFromHistoryBtn");
+        if (registerBtn) {
+          registerBtn.onclick = () => {
+            closeModal();
+            openAuthModal();
+          };
+        }
         return;
       }
       
