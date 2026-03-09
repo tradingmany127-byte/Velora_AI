@@ -1058,9 +1058,8 @@ async function boot() {
         return;
       }
       if (list._silentAuthError) {
-        console.log("Silent auth error:", list._silentAuthError);
-        return;
-      }
+  console.warn("Silent auth error:", list._silentAuthError);
+}
       await createNewChat();
     }
     
