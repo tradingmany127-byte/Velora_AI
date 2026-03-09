@@ -1,4 +1,4 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { initializeApp } from "firebase/app";
 import {
   getAuth,
   GoogleAuthProvider,
@@ -10,7 +10,8 @@ import {
   signInWithEmailAndPassword,
   signInWithPopup,
   signOut
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+} from "firebase/auth";
+
 const firebaseConfig = {
   apiKey: "AIzaSyB-63Q-WLv7ZPd3fYmMGWXCO2Vmmyr_5as",
   authDomain: "velora-ai-a6281.firebaseapp.com",
