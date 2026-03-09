@@ -1559,23 +1559,6 @@ document.addEventListener("click", async (e) => {
 
 // ===== Вспомогательные функции для истории чатов =====
 
-function formatChatDate(dateString) {
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffMs = now - date;
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  
-  if (diffDays === 0) {
-    return date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-  } else if (diffDays === 1) {
-    return 'Вчера';
-  } else if (diffDays < 7) {
-    return diffDays + ' дней назад';
-  } else {
-    return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
-  }
-}
-
 async function renameChat(chatId, currentTitle) {
   const newTitle = prompt("Введите новое название чата:", currentTitle);
   if (!newTitle || newTitle.trim() === "") return;
