@@ -12,12 +12,14 @@ import {
   signOut
 } from "./firebase.js";
 
+let loginTime = 0;
+
 const API = {
   async get(url) {
     const r = await fetch(url, { credentials: "include" });
     const data = await r.json();
-    // 🚨 Не показываем UNAUTHORIZED если пользователь не авторизован
-    if (data.error === "UNAUTHORIZED" && !state.user) {
+    // 🚨 Не показываем UNAUTHORIZED если пользователь не авторизован или недавно вошел
+    if (data.error === "UNAUTHORIZED" && (!state.user || (Date.now() - loginTime) < 2000)) {
       data.ok = false;
       data._silentAuthError = true; // Помечаем как тихую ошибку
     }
@@ -31,8 +33,8 @@ const API = {
       credentials: "include"
     });
     const data = await r.json();
-    // 🚨 Не показываем UNAUTHORIZED если пользователь не авторизован
-    if (data.error === "UNAUTHORIZED" && !state.user) {
+    // 
+    if (data.error === "UNAUTHORIZED" && (!state.user || (Date.now() - loginTime) < 2000)) {
       data.ok = false;
       data._silentAuthError = true;
     }
@@ -44,8 +46,8 @@ const API = {
       credentials: "include"
     });
     const data = await r.json();
-    // 🚨 Не показываем UNAUTHORIZED если пользователь не авторизован
-    if (data.error === "UNAUTHORIZED" && !state.user) {
+    // 
+    if (data.error === "UNAUTHORIZED" && (!state.user || (Date.now() - loginTime) < 2000)) {
       data.ok = false;
       data._silentAuthError = true;
     }
@@ -550,7 +552,10 @@ async function bootAfterAuth(source) {
     provider: u.providerData?.[0]?.providerId || "password",
   };
 
-  // 3) дальше — твой текущий сценарий (чтобы не сломать кнопку “Профиль”)
+  // 3) Небольшая задержка для обновления токена на сервере
+  await new Promise(resolve => setTimeout(resolve, 100));
+
+  // 4) дальше — твой текущий сценарий (чтобы не сломать кнопку “Профиль”)
   if (typeof refreshProfileSilent === "function") {
     await refreshProfileSilent();
   }
@@ -1116,6 +1121,7 @@ async function login(email, password) {
     }
 
     toast("Успех", "Вход выполнен");
+    loginTime = Date.now(); // Устанавливаем время входа
     await bootAfterAuth("firebase");
     console.log("Logged in:", userCredential.user);
   } catch (error) {
