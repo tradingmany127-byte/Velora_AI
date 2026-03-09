@@ -14,19 +14,27 @@ import {
 
 let loginTime = 0;
 
+// Общая функция для получения авторизационных заголовков
+async function getAuthHeaders() {
+  const headers = { "Content-Type": "application/json" };
+  
+  // Проверяем именно Firebase auth, а не state.user
+  const user = firebaseAuth.currentUser;
+  if (user) {
+    try {
+      const token = await user.getIdToken();
+      headers["Authorization"] = `Bearer ${token}`;
+    } catch (error) {
+      console.error("Failed to get auth token:", error);
+    }
+  }
+  
+  return headers;
+}
+
 const API = {
   async get(url) {
-    const headers = { "Content-Type": "application/json" };
-    
-    // Добавляем Authorization header если пользователь авторизован
-    if (state.user && firebaseAuth.currentUser) {
-      try {
-        const token = await firebaseAuth.currentUser.getIdToken();
-        headers["Authorization"] = `Bearer ${token}`;
-      } catch (error) {
-        console.error("Failed to get auth token:", error);
-      }
-    }
+    const headers = await getAuthHeaders();
     
     const r = await fetch(url, { 
       headers,
@@ -34,26 +42,15 @@ const API = {
     });
     const data = await r.json();
     
-    // Если пользователь авторизован и получает UNAUTHORIZED - это реальная ошибка сессии
-    if (data.error === "UNAUTHORIZED" && state.user) {
-      // Показываем реальную ошибку для авторизованных пользователей
+    // Если Firebase user существует, а backend возвращает UNAUTHORIZED - это реальная ошибка
+    if (data.error === "UNAUTHORIZED" && firebaseAuth.currentUser) {
       data.sessionExpired = true;
     }
     
     return data;
   },
   async post(url, body) {
-    const headers = { "Content-Type": "application/json" };
-    
-    // Добавляем Authorization header если пользователь авторизован
-    if (state.user && firebaseAuth.currentUser) {
-      try {
-        const token = await firebaseAuth.currentUser.getIdToken();
-        headers["Authorization"] = `Bearer ${token}`;
-      } catch (error) {
-        console.error("Failed to get auth token:", error);
-      }
-    }
+    const headers = await getAuthHeaders();
     
     const r = await fetch(url, {
       method: "POST",
@@ -63,25 +60,15 @@ const API = {
     });
     const data = await r.json();
     
-    // Если пользователь авторизован и получает UNAUTHORIZED - это реальная ошибка сессии
-    if (data.error === "UNAUTHORIZED" && state.user) {
+    // Если Firebase user существует, а backend возвращает UNAUTHORIZED - это реальная ошибка
+    if (data.error === "UNAUTHORIZED" && firebaseAuth.currentUser) {
       data.sessionExpired = true;
     }
     
     return data;
   },
   async delete(url) {
-    const headers = {};
-    
-    // Добавляем Authorization header если пользователь авторизован
-    if (state.user && firebaseAuth.currentUser) {
-      try {
-        const token = await firebaseAuth.currentUser.getIdToken();
-        headers["Authorization"] = `Bearer ${token}`;
-      } catch (error) {
-        console.error("Failed to get auth token:", error);
-      }
-    }
+    const headers = await getAuthHeaders();
     
     const r = await fetch(url, {
       method: "DELETE",
@@ -90,8 +77,8 @@ const API = {
     });
     const data = await r.json();
     
-    // Если пользователь авторизован и получает UNAUTHORIZED - это реальная ошибка сессии
-    if (data.error === "UNAUTHORIZED" && state.user) {
+    // Если Firebase user существует, а backend возвращает UNAUTHORIZED - это реальная ошибка
+    if (data.error === "UNAUTHORIZED" && firebaseAuth.currentUser) {
       data.sessionExpired = true;
     }
     
@@ -300,8 +287,8 @@ function renderMessages() {
 }
 
 async function createNewChat() {
-  // Если пользователь не авторизован, создаем локальный гостевой чат
-  if (!state.user || !firebaseAuth.currentUser) {
+  // Если пользователь не авторизован в Firebase, создаем локальный гостевой чат
+  if (!firebaseAuth.currentUser) {
     state.guestSession = [];
     state.activeChatId = null;
     toast("Готово", "Новый гостевой чат создан.");
@@ -339,7 +326,7 @@ async function createNewChat() {
 
 // Генерация названия чата по умолчанию
 async function generateChatTitle() {
-  if (!state.user) return "Чат 1";
+  if (!firebaseAuth.currentUser) return "Чат 1";
   
   try {
     const r = await API.get("/api/chats");
@@ -367,8 +354,8 @@ async function generateChatTitle() {
 }
 
 async function loadChat(chatId) {
-  // Проверяем наличие токена перед API вызовом
-  if (!state.user || !firebaseAuth.currentUser) {
+  // Проверяем наличие Firebase пользователя перед API вызовом
+  if (!firebaseAuth.currentUser) {
     toast("Ошибка", "Загрузка чатов доступна после входа в аккаунт.");
     return;
   }
@@ -697,7 +684,7 @@ async function bootAfterAuth(source) {
   
 
 async function refreshProfileSilent() {
-  if (!state.user) return;
+  if (!firebaseAuth.currentUser) return;
   try {
     const r = await API.get("/api/profile");
     if (r.ok) state.profile = r;
@@ -740,7 +727,7 @@ function formatChatDate(dateString) {
 }
 
 function openProfile() {
-  if (!state.user) return openAuthModal();
+  if (!firebaseAuth.currentUser) return openAuthModal();
 
   const p = state.profile?.profile;
   const user = p?.user || state.user;
@@ -864,8 +851,8 @@ function openProfile() {
 }
 
 async function openChatHistory() {
-  // Если пользователь не авторизован или нет токена, показываем гостевое состояние
-  if (!state.user || !firebaseAuth.currentUser) {
+  // Если пользователь не авторизован в Firebase, показываем гостевое состояние
+  if (!firebaseAuth.currentUser) {
     const body = `
       <div class="chatHistoryHeader">
         <div class="sub">Войдите в аккаунт, чтобы сохранять и просматривать историю чатов.</div>
