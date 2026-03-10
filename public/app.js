@@ -40,7 +40,26 @@ const API = {
       headers,
       credentials: "include" 
     });
-    const data = await r.json();
+    
+    // Безопасная обработка ответа
+    let data;
+    if (r.ok) {
+      try {
+        data = await r.json();
+      } catch (error) {
+        console.error("Failed to parse JSON response:", error);
+        data = { ok: false, error: "INVALID_RESPONSE" };
+      }
+    } else {
+      try {
+        const text = await r.text();
+        console.error("API error response:", r.status, text);
+        data = { ok: false, error: "HTTP_ERROR", status: r.status, text };
+      } catch (error) {
+        console.error("Failed to read error response:", error);
+        data = { ok: false, error: "HTTP_ERROR", status: r.status };
+      }
+    }
     
     // Если Firebase user существует, а backend возвращает UNAUTHORIZED - это реальная ошибка
     if (data.error === "UNAUTHORIZED" && firebaseAuth.currentUser) {
@@ -58,7 +77,26 @@ const API = {
       body: JSON.stringify(body || {}),
       credentials: "include"
     });
-    const data = await r.json();
+    
+    // Безопасная обработка ответа
+    let data;
+    if (r.ok) {
+      try {
+        data = await r.json();
+      } catch (error) {
+        console.error("Failed to parse JSON response:", error);
+        data = { ok: false, error: "INVALID_RESPONSE" };
+      }
+    } else {
+      try {
+        const text = await r.text();
+        console.error("API error response:", r.status, text);
+        data = { ok: false, error: "HTTP_ERROR", status: r.status, text };
+      } catch (error) {
+        console.error("Failed to read error response:", error);
+        data = { ok: false, error: "HTTP_ERROR", status: r.status };
+      }
+    }
     
     // Если Firebase user существует, а backend возвращает UNAUTHORIZED - это реальная ошибка
     if (data.error === "UNAUTHORIZED" && firebaseAuth.currentUser) {
@@ -75,7 +113,26 @@ const API = {
       headers,
       credentials: "include"
     });
-    const data = await r.json();
+    
+    // Безопасная обработка ответа
+    let data;
+    if (r.ok) {
+      try {
+        data = await r.json();
+      } catch (error) {
+        console.error("Failed to parse JSON response:", error);
+        data = { ok: false, error: "INVALID_RESPONSE" };
+      }
+    } else {
+      try {
+        const text = await r.text();
+        console.error("API error response:", r.status, text);
+        data = { ok: false, error: "HTTP_ERROR", status: r.status, text };
+      } catch (error) {
+        console.error("Failed to read error response:", error);
+        data = { ok: false, error: "HTTP_ERROR", status: r.status };
+      }
+    }
     
     // Если Firebase user существует, а backend возвращает UNAUTHORIZED - это реальная ошибка
     if (data.error === "UNAUTHORIZED" && firebaseAuth.currentUser) {
@@ -1366,7 +1423,10 @@ boot();
 // Firebase session synchronization
 async function syncFirebaseSession() {
   const user = firebaseAuth.currentUser;
-  if (!user) return false;
+  if (!user) {
+    console.error("No Firebase user found for session sync");
+    return false;
+  }
 
   try {
     const token = await user.getIdToken();
@@ -1387,7 +1447,13 @@ async function syncFirebaseSession() {
     }
 
     const data = await response.json();
-    return !!data.ok;
+    if (data.ok && data.user) {
+      console.log("Firebase session sync successful:", data.user.email);
+      return data;
+    } else {
+      console.error("Firebase session sync returned error:", data);
+      return false;
+    }
   } catch (error) {
     console.error("Firebase session sync error:", error);
     return false;
