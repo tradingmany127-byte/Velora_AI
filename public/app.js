@@ -643,6 +643,10 @@ if (btn) {
       const email = document.getElementById("loginEmail")?.value?.trim();
       const password = document.getElementById("loginPass")?.value;
       await login(email, password);
+      if (!email || !password) {
+  alert("Введите email и пароль");
+  return;
+}
     };
   }
 }
