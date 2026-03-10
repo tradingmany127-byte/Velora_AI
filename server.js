@@ -99,10 +99,26 @@ function getMe(req) {
   return { user: u, settings };
 }
 
-function requireAuth(req, res, next) {
-  const me = getMe(req);
-  if (!me) return res.status(401).json({ ok: false, error: "UNAUTHORIZED" });
-  req.me = me;
+async function requireAuth(req, res, next) {
+  const firebaseUser = await verifyFirebaseToken(req);
+
+  if (!firebaseUser) {
+    return res.status(401).json({ ok: false, error: "UNAUTHORIZED" });
+  }
+
+  const u = db.prepare("SELECT id, name, email, plan, avatar_seed, verified, created_at FROM users WHERE id=?")
+    .get(firebaseUser.uid);
+
+  if (!u) {
+    return res.status(401).json({ ok: false, error: "USER_NOT_FOUND" });
+  }
+
+  const settings =
+  db.prepare("SELECT tone, length, language FROM settings WHERE user_id=?")
+  
+      .get(u.id) || { tone: "soft", length: "normal", language: "ru" };
+
+  req.me = { user: u, settings };
   next();
 }
 
