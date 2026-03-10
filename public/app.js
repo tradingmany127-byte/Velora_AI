@@ -1406,12 +1406,7 @@ async function login(email, password) {
       return;
     }
 
-    // Sync Firebase session with backend
-    const synced = await syncFirebaseSession();
-    if (!synced) {
-      throw new Error("Failed to sync session with backend");
-    }
-
+    toast("Успех", "Вход выполнен");
     loginTime = Date.now(); // Устанавливаем время входа
     await bootAfterAuth("firebase");
     console.log("Logged in:", userCredential.user);
@@ -1438,7 +1433,7 @@ async function login(email, password) {
         message = "Введите корректный email";
         break;
       default:
-        message = error.message || "Ошибка входа";
+        message = "Ошибка входа";
     }
     toast("Ошибка", message);
   }
@@ -1448,13 +1443,6 @@ async function loginWithGoogle() {
   try {
     const result = await signInWithPopup(firebaseAuth, googleProvider);
     const user = result.user;
-    
-    // Sync Firebase session with backend
-    const synced = await syncFirebaseSession();
-    if (!synced) {
-      throw new Error("Failed to sync session with backend");
-    }
-    
     toast("Успех", "Вход через Google выполнен");
     await bootAfterAuth("firebase");
     console.log("Google login:", result.user);
