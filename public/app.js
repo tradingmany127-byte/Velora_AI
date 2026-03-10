@@ -93,7 +93,18 @@ const state = {
   activeMode: "free", // free | pro
   guestSession: [], // не сохраняем в localStorage, только RAM
 };
+onAuthStateChanged(firebaseAuth, async (user) => {
+  state.user = user || null;
 
+  if (user) {
+    try {
+      await loadProfile();
+      await loadChats();
+    } catch (e) {
+      console.error("Boot after auth failed:", e);
+    }
+  }
+});
 let elApp, elModalRoot, elToasts, elWelcome;
 
 function initDOMElements() {
