@@ -40,26 +40,7 @@ const API = {
       headers,
       credentials: "include" 
     });
-    
-    // Безопасная обработка ответа
-    let data;
-    if (r.ok) {
-      try {
-        data = await r.json();
-      } catch (error) {
-        console.error("Failed to parse JSON response:", error);
-        data = { ok: false, error: "INVALID_RESPONSE" };
-      }
-    } else {
-      try {
-        const text = await r.text();
-        console.error("API error response:", r.status, text);
-        data = { ok: false, error: "HTTP_ERROR", status: r.status, text };
-      } catch (error) {
-        console.error("Failed to read error response:", error);
-        data = { ok: false, error: "HTTP_ERROR", status: r.status };
-      }
-    }
+    const data = await r.json();
     
     // Если Firebase user существует, а backend возвращает UNAUTHORIZED - это реальная ошибка
     if (data.error === "UNAUTHORIZED" && firebaseAuth.currentUser) {
@@ -77,26 +58,7 @@ const API = {
       body: JSON.stringify(body || {}),
       credentials: "include"
     });
-    
-    // Безопасная обработка ответа
-    let data;
-    if (r.ok) {
-      try {
-        data = await r.json();
-      } catch (error) {
-        console.error("Failed to parse JSON response:", error);
-        data = { ok: false, error: "INVALID_RESPONSE" };
-      }
-    } else {
-      try {
-        const text = await r.text();
-        console.error("API error response:", r.status, text);
-        data = { ok: false, error: "HTTP_ERROR", status: r.status, text };
-      } catch (error) {
-        console.error("Failed to read error response:", error);
-        data = { ok: false, error: "HTTP_ERROR", status: r.status };
-      }
-    }
+    const data = await r.json();
     
     // Если Firebase user существует, а backend возвращает UNAUTHORIZED - это реальная ошибка
     if (data.error === "UNAUTHORIZED" && firebaseAuth.currentUser) {
@@ -113,26 +75,7 @@ const API = {
       headers,
       credentials: "include"
     });
-    
-    // Безопасная обработка ответа
-    let data;
-    if (r.ok) {
-      try {
-        data = await r.json();
-      } catch (error) {
-        console.error("Failed to parse JSON response:", error);
-        data = { ok: false, error: "INVALID_RESPONSE" };
-      }
-    } else {
-      try {
-        const text = await r.text();
-        console.error("API error response:", r.status, text);
-        data = { ok: false, error: "HTTP_ERROR", status: r.status, text };
-      } catch (error) {
-        console.error("Failed to read error response:", error);
-        data = { ok: false, error: "HTTP_ERROR", status: r.status };
-      }
-    }
+    const data = await r.json();
     
     // Если Firebase user существует, а backend возвращает UNAUTHORIZED - это реальная ошибка
     if (data.error === "UNAUTHORIZED" && firebaseAuth.currentUser) {
@@ -1420,46 +1363,6 @@ async function boot() {
 boot();
 // ===== AUTH FUNCTIONS =====
 
-// Firebase session synchronization
-async function syncFirebaseSession() {
-  const user = firebaseAuth.currentUser;
-  if (!user) {
-    console.error("No Firebase user found for session sync");
-    return false;
-  }
-
-  try {
-    const token = await user.getIdToken();
-
-    const response = await fetch("/api/auth/firebase-session", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
-      },
-      credentials: "include"
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Firebase session sync failed:", response.status, errorText);
-      return false;
-    }
-
-    const data = await response.json();
-    if (data.ok && data.user) {
-      console.log("Firebase session sync successful:", data.user.email);
-      return data;
-    } else {
-      console.error("Firebase session sync returned error:", data);
-      return false;
-    }
-  } catch (error) {
-    console.error("Firebase session sync error:", error);
-    return false;
-  }
-}
-
 async function register(email, password) {
   try {
     const userCredential = await createUserWithEmailAndPassword(firebaseAuth, email, password);
@@ -1499,12 +1402,6 @@ async function login(email, password) {
       return;
     }
 
-    // Sync Firebase session with backend
-    const synced = await syncFirebaseSession();
-    if (!synced) {
-      throw new Error("Failed to sync session with backend");
-    }
-
     toast("Успех", "Вход выполнен");
     loginTime = Date.now(); // Устанавливаем время входа
     await bootAfterAuth("firebase");
@@ -1532,7 +1429,7 @@ async function login(email, password) {
         message = "Введите корректный email";
         break;
       default:
-        message = error.message || "Ошибка входа";
+        message = "Ошибка входа";
     }
     toast("Ошибка", message);
   }
@@ -1542,13 +1439,6 @@ async function loginWithGoogle() {
   try {
     const result = await signInWithPopup(firebaseAuth, googleProvider);
     const user = result.user;
-    
-    // Sync Firebase session with backend
-    const synced = await syncFirebaseSession();
-    if (!synced) {
-      throw new Error("Failed to sync session with backend");
-    }
-    
     toast("Успех", "Вход через Google выполнен");
     await bootAfterAuth("firebase");
     console.log("Google login:", result.user);
@@ -1641,12 +1531,6 @@ document.addEventListener("click", async (e) => {
 
       if (firebaseAuth.currentUser?.emailVerified) {
         toast("Успех", "Почта подтверждена");
-        // Sync Firebase session with backend after email verification
-        const synced = await syncFirebaseSession();
-        if (!synced) {
-          toast("Ошибка", "Не удалось синхронизировать сессию. Попробуйте войти снова.");
-          return;
-        }
         await bootAfterAuth("firebase");
       } else {
         toast("Ошибка", "Почта ещё не подтверждена");
