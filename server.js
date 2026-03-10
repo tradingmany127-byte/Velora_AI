@@ -30,7 +30,23 @@ async function verifyFirebaseToken(req) {
 
   try {
     const decoded = await admin.auth().verifyIdToken(token);
-    return decoded;
+    
+    // Ищем пользователя в БД по email из Firebase token
+    const user = db.prepare("SELECT id, name, email, plan, avatar_seed, verified, created_at FROM users WHERE email=?")
+      .get(decoded.email);
+    
+    if (!user) return null;
+    
+    // Получаем настройки пользователя
+    const settings = db.prepare("SELECT tone, length, language FROM settings WHERE user_id=?")
+      .get(user.id) || { tone: "soft", length: "normal", language: "ru" };
+    
+    // Возвращаем полный объект пользователя с настройками
+    return {
+      firebase: decoded,
+      user: user,
+      settings: settings
+    };
   } catch (err) {
     console.error("Token verification failed:", err);
     return null;
@@ -100,25 +116,18 @@ function getMe(req) {
 }
 
 async function requireAuth(req, res, next) {
-  const firebaseUser = await verifyFirebaseToken(req);
+  const authData = await verifyFirebaseToken(req);
 
-  if (!firebaseUser) {
+  if (!authData || !authData.user) {
     return res.status(401).json({ ok: false, error: "UNAUTHORIZED" });
   }
 
-  const u = db.prepare("SELECT id, name, email, plan, avatar_seed, verified, created_at FROM users WHERE email=?")
-  .get(firebaseUser.email);
-
-  if (!u) {
-    return res.status(401).json({ ok: false, error: "USER_NOT_FOUND" });
-  }
-
-  const settings =
-  db.prepare("SELECT tone, length, language FROM settings WHERE user_id=?")
+  // Устанавливаем req.me для совместимости
+  req.me = { 
+    user: authData.user, 
+    settings: authData.settings 
+  };
   
-      .get(u.id) || { tone: "soft", length: "normal", language: "ru" };
-
-  req.me = { user: u, settings };
   next();
 }
 
@@ -464,35 +473,49 @@ app.delete("/api/chats/:id", requireAuth, (req, res) => {
 
 // ---------------- CHAT (GUEST + AUTH) ----------------
 app.post("/api/chat", async (req, res) => {
-  const firebaseUser = await verifyFirebaseToken(req);
+  const authData = await verifyFirebaseToken(req);
 
-if (!firebaseUser) {
-  return res.status(401).json({ ok: false, error: "UNAUTHORIZED" });
-}
+  // Если нет Firebase token - это гость
+  if (!authData || !authData.user) {
+    const { message, chatId, mode } = req.body || {};
+    const text = String(message || "").trim();
+    if (!text) return res.json({ ok: false, error: "EMPTY" });
+
+    // Гостевой режим - без истории и лимитов
+    try {
+      const reply = await generateReply({
+        message: text,
+        history: [],
+        mode: "free"
+      });
+      return res.json({ ok: true, reply });
+    } catch (err) {
+      console.error("Chat generation error:", err);
+      return res.status(500).json({ ok: false, error: "SERVER_ERROR" });
+    }
+  }
+
+  // Авторизованный пользователь
+  const user = authData.user;
+  const settings = authData.settings;
   const { message, chatId, mode } = req.body || {};
   const text = String(message || "").trim();
   if (!text) return res.json({ ok: false, error: "EMPTY" });
-
-  const me = getMe(req);
-  const user = me?.user || null;
 
   // режим: free/pro
   let useMode = (mode === "pro" ? "pro" : "free");
 
   // ограничения Pro: только если план позволяет
   if (useMode === "pro") {
-    if (!user) return res.json({ ok: false, error: "LOGIN_REQUIRED_FOR_PRO" });
     const lim = planLimits(user.plan);
     if (!lim.pro) return res.json({ ok: false, error: "PLAN_REQUIRED" });
   }
 
   // лимиты сообщений
-  if (user) {
-    const lim = planLimits(user.plan);
-    const usage = getUsage(user.id);
-    if (usage.msg_count >= lim.msgPerDay) {
-      return res.json({ ok: false, error: "DAILY_LIMIT", limit: lim.msgPerDay });
-    }
+  const lim = planLimits(user.plan);
+  const usage = getUsage(user.id);
+  if (usage.msg_count >= lim.msgPerDay) {
+    return res.json({ ok: false, error: "DAILY_LIMIT", limit: lim.msgPerDay });
   }
 
   try {
@@ -512,35 +535,28 @@ if (!firebaseUser) {
     }
 
     const reply = await generateReply({
+      message: text,
+      history,
       mode: useMode,
-      env: process.env,
-      userSettings: me?.settings || { tone: "soft", length: "normal", language: "ru" },
-      chatHistory: history,
-      userMessage: text
+      plan: user.plan,
+      settings
     });
 
-    // сохранить только если авторизован + есть chatId
-    if (user && chatId) {
+    // Сохраняем сообщение в БД если есть chatId
+    if (chatId && user) {
       const owns = db.prepare("SELECT id FROM chats WHERE id=? AND user_id=?").get(chatId, user.id);
       if (owns) {
-        const now = Date.now();
-        db.prepare("INSERT INTO messages(id, chat_id, role, content, created_at) VALUES(?,?,?,?,?)")
-          .run(nanoid(12), chatId, "user", text, now);
-        db.prepare("INSERT INTO messages(id, chat_id, role, content, created_at) VALUES(?,?,?,?,?)")
-          .run(nanoid(12), chatId, "assistant", reply, now + 1);
-        db.prepare("UPDATE chats SET updated_at=? WHERE id=?").run(now, chatId);
+        db.prepare("INSERT INTO messages (chat_id, role, content, created_at) VALUES (?,?,?,?)")
+          .run(chatId, "user", text, Date.now());
+        db.prepare("INSERT INTO messages (chat_id, role, content, created_at) VALUES (?,?,?,?)")
+          .run(chatId, "assistant", reply, Date.now());
       }
     }
 
-    if (user) incMsg(user.id);
-
-    res.json({ ok: true, reply });
-  } catch (e) {
-    const msg = String(e?.message || "");
-    if (msg.includes("PRO_NOT_CONFIGURED")) return res.json({ ok: false, error: "PRO_NOT_CONFIGURED" });
-    if (msg.startsWith("LLM_ERROR_")) return res.json({ ok: false, error: "LLM_ERROR" });
-    console.error(e);
-    res.json({ ok: false, error: "SERVER_ERROR" });
+    return res.json({ ok: true, reply });
+  } catch (err) {
+    console.error("Chat generation error:", err);
+    return res.status(500).json({ ok: false, error: "SERVER_ERROR" });
   }
 });
 
