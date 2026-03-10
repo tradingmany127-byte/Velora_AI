@@ -11,6 +11,7 @@ import { generateReply } from "./llm.js";
 import path from "path";
 import { fileURLToPath } from "url";
 const app = express();
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -18,7 +19,23 @@ const __dirname = path.dirname(__filename);
 const publicDir = path.join(__dirname, "public");
 
 const PORT = Number(process.env.PORT || 3000);
+async function verifyFirebaseToken(req) {
+  const authHeader = req.headers.authorization;
 
+  if (!authHeader) return null;
+
+  const token = authHeader.split("Bearer ")[1];
+
+  if (!token) return null;
+
+  try {
+    const decoded = await admin.auth().verifyIdToken(token);
+    return decoded;
+  } catch (err) {
+    console.error("Token verification failed:", err);
+    return null;
+  }
+}
 // Инициализация Firebase Admin SDK
 if (!admin.apps.length) {
   // Временное решение: если нет Firebase Admin credentials, пропускаем инициализацию
@@ -431,6 +448,11 @@ app.delete("/api/chats/:id", requireAuth, (req, res) => {
 
 // ---------------- CHAT (GUEST + AUTH) ----------------
 app.post("/api/chat", async (req, res) => {
+  const firebaseUser = await verifyFirebaseToken(req);
+
+if (!firebaseUser) {
+  return res.status(401).json({ ok: false, error: "UNAUTHORIZED" });
+}
   const { message, chatId, mode } = req.body || {};
   const text = String(message || "").trim();
   if (!text) return res.json({ ok: false, error: "EMPTY" });
