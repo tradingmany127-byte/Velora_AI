@@ -52,8 +52,8 @@ function getMe(req) {
   if (!token) return null;
   const s = db.prepare("SELECT user_id FROM sessions WHERE token=?").get(token);
   if (!s) return null;
-  const u = db.prepare("SELECT id, name, email, plan, avatar_seed, verified, created_at FROM users WHERE id=?")
-    .get(s.user_id);
+   const u = db.prepare("SELECT id, name, email, plan, avatar_seed, verified, created_at FROM users WHERE email=?")
+  .get(firebaseUser.email || firebaseUser.user_id);
   if (!u) return null;
   const settings = db.prepare("SELECT tone, length, language FROM settings WHERE user_id=?").get(u.id)
     || { tone: "soft", length: "normal", language: "ru" };
