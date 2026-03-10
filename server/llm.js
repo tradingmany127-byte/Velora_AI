@@ -1,3 +1,7 @@
+import { GoogleGenAI } from "@google/genai";
+const gemini = new GoogleGenAI({
+  apiKey: process.env.GEMINI_API_KEY
+});
 function buildSystemPrompt(settings) {
   const tone = settings?.tone || "soft";     // soft | neutral | tough
   const length = settings?.length || "normal"; // short | normal | long
@@ -53,7 +57,22 @@ export async function generateReply({ mode, env, userSettings, chatHistory, user
     ...(chatHistory || []).slice(-12), // ограничим контекст
     { role: "user", content: userMessage }
   ];
+if (mode === "gemini") {
+  if (!env.GEMINI_API_KEY) {
+    throw new Error("GEMINI_NOT_CONFIGURED");
+  }
 
+  const prompt = messages
+    .map(m => `${m.role}: ${m.content}`)
+    .join("\n");
+
+  const response = await gemini.models.generateContent({
+    model: "gemini-2.5-flash",
+    contents: prompt
+  });
+
+  return response.text;
+}
   if (mode === "pro") {
     if (!env.OPENAI_API_KEY) throw new Error("PRO_NOT_CONFIGURED");
     return callOpenAIStyle({
