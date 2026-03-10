@@ -106,8 +106,8 @@ async function requireAuth(req, res, next) {
     return res.status(401).json({ ok: false, error: "UNAUTHORIZED" });
   }
 
-  const u = db.prepare("SELECT id, name, email, plan, avatar_seed, verified, created_at FROM users WHERE id=?")
-    .get(firebaseUser.uid);
+  const u = db.prepare("SELECT id, name, email, plan, avatar_seed, verified, created_at FROM users WHERE email=?")
+  .get(firebaseUser.email);
 
   if (!u) {
     return res.status(401).json({ ok: false, error: "USER_NOT_FOUND" });
