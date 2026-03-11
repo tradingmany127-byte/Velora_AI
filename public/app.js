@@ -98,10 +98,17 @@ onAuthStateChanged(firebaseAuth, async (user) => {
 
   if (user) {
     try {
-      await loadProfile();
-      await loadChats();
+      // Загружаем профиль и чаты для авторизованного пользователя
+      await refreshProfileSilent();
+      const list = await API.get("/api/chats");
+      if (list.ok && list.chats?.length) {
+        state.activeChatId = list.chats[0].id;
+        await loadChat(state.activeChatId);
+      } else {
+        await createNewChat();
+      }
     } catch (e) {
-      console.error("Boot after auth failed:", e);
+      console.error("Boot after auth failed", e);
     }
   }
 });
