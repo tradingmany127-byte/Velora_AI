@@ -57,7 +57,19 @@ export async function generateReply({ mode, env, userSettings, chatHistory, user
     ...(chatHistory || []).slice(-12), // ограничим контекст
     { role: "user", content: userMessage }
   ];
-if (mode === "gemini") {
+
+  if (mode === "pro") {
+    if (!env.OPENAI_API_KEY) throw new Error("PRO_NOT_CONFIGURED");
+    return callOpenAIStyle({
+      baseUrl: env.OPENAI_BASE_URL || "https://api.openai.com/v1",
+      apiKey: env.OPENAI_API_KEY,
+      model: "gpt-4o-mini",
+      messages,
+      temperature: 0.7
+    });
+  }
+
+  // Default: Gemini mode
   if (!env.GEMINI_API_KEY) {
     throw new Error("GEMINI_NOT_CONFIGURED");
   }
@@ -72,22 +84,4 @@ if (mode === "gemini") {
   });
 
   return response.text;
-}
-  if (mode === "pro") {
-    if (!env.OPENAI_API_KEY) throw new Error("PRO_NOT_CONFIGURED");
-    return callOpenAIStyle({
-      baseUrl: env.OPENAI_BASE_URL || "https://api.openai.com/v1",
-      apiKey: env.OPENAI_API_KEY,
-      model: env.OPENAI_MODEL || "gpt-4o-mini",
-      messages
-    });
-  }
-
-  // free
-  return callOpenAIStyle({
-    baseUrl: env.LOCAL_LLM_BASE_URL,
-    apiKey: null,
-    model: env.LOCAL_LLM_MODEL || "mistral-7b-instruct",
-    messages
-  });
 }

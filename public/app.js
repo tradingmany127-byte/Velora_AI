@@ -365,6 +365,24 @@ async function generateChatTitle() {
   return "Чат 1";
 }
 
+async function loadChats() {
+  try {
+    const list = await API.get("/api/chats");
+    if (list.ok && list.chats) {
+      state.chats = list.chats;
+      if (list.chats.length > 0) {
+        state.activeChatId = list.chats[0].id;
+        await loadChat(state.activeChatId);
+      } else {
+        await createNewChat();
+      }
+    }
+  } catch (error) {
+    console.error("Failed to load chats:", error);
+    throw error;
+  }
+}
+
 async function loadChat(chatId) {
   // Проверяем наличие Firebase пользователя перед API вызовом
   if (!firebaseAuth.currentUser) {

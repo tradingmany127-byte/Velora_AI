@@ -37,9 +37,9 @@ async function verifyFirebaseToken(req) {
   
     if (!user) {
       db.prepare(`
-        INSERT INTO users (email, name, plan, avatar_seed, verified, created_at)
-        VALUES (?, ?, 'free', '', 1, datetime('now'))
-      `).run(decoded.email, decoded.name || "User");
+        INSERT INTO users (id, email, name, password_hash, plan, avatar_seed, verified, created_at)
+        VALUES (?, ?, ?, 'firebase_auth', 'free', ?, 1, ?)
+      `).run(decoded.uid, decoded.email, decoded.name || "User", decoded.email?.split('@')[0] || "user", Date.now());
 
       const newUser = db.prepare(`
         SELECT id, name, email, plan, avatar_seed, verified, created_at
@@ -47,6 +47,12 @@ async function verifyFirebaseToken(req) {
       `).get(decoded.email);
 
       user = newUser;
+      
+      // Создаем настройки для нового пользователя
+      db.prepare(`
+        INSERT INTO settings (user_id, tone, length, language)
+        VALUES (?, 'soft', 'normal', 'ru')
+      `).run(newUser.id);
     }
     
     // Получаем настройки пользователя
@@ -66,23 +72,18 @@ async function verifyFirebaseToken(req) {
 }
 // Инициализация Firebase Admin SDK
 if (!admin.apps.length) {
-  // Временное решение: если нет Firebase Admin credentials, пропускаем инициализацию
-  // Для production нужно добавить FIREBASE_CLIENT_EMAIL и FIREBASE_PRIVATE_KEY в .env
-  if (process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PRIVATE_KEY) {
-    admin.initializeApp({
-      credential: admin.credential.cert({
-        projectId: "velora-ai-a6281",
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-      }),
-    });
-  } else {
-    console.warn("Firebase Admin SDK credentials not found. Please add FIREBASE_CLIENT_EMAIL and FIREBASE_PRIVATE_KEY to .env file");
-    // Инициализируем без credentials для тестирования
-    admin.initializeApp({
-      projectId: "velora-ai-a6281",
-    });
+  if (!process.env.FIREBASE_CLIENT_EMAIL || !process.env.FIREBASE_PRIVATE_KEY) {
+    console.error("FATAL: Firebase Admin SDK credentials not found. Please add FIREBASE_CLIENT_EMAIL and FIREBASE_PRIVATE_KEY to .env file");
+    process.exit(1);
   }
+  
+  admin.initializeApp({
+    credential: admin.credential.cert({
+      projectId: "velora-ai-a6281",
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+    }),
+  });
 }
 
 initDb();
