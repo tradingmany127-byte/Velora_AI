@@ -93,25 +93,19 @@ const state = {
   activeMode: "free", // free | pro
   guestSession: [], // не сохраняем в localStorage, только RAM
 };
+
 onAuthStateChanged(firebaseAuth, async (user) => {
   state.user = user || null;
 
   if (user) {
     try {
-      // Загружаем профиль и чаты для авторизованного пользователя
-      await refreshProfileSilent();
-      const list = await API.get("/api/chats");
-      if (list.ok && list.chats?.length) {
-        state.activeChatId = list.chats[0].id;
-        await loadChat(state.activeChatId);
-      } else {
-        await createNewChat();
-      }
+      await loadChats();
     } catch (e) {
       console.error("Boot after auth failed", e);
     }
   }
 });
+
 let elApp, elModalRoot, elToasts, elWelcome;
 
 function initDOMElements() {

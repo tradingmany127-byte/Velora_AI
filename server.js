@@ -32,10 +32,22 @@ async function verifyFirebaseToken(req) {
     const decoded = await admin.auth().verifyIdToken(token);
     
     // Ищем пользователя в БД по email из Firebase token
-    const user = db.prepare("SELECT id, name, email, plan, avatar_seed, verified, created_at FROM users WHERE email=?")
+    let user = db.prepare("SELECT id, name, email, plan, avatar_seed, verified, created_at FROM users WHERE email=?")
       .get(decoded.email);
-    
-    if (!user) return null;
+  
+    if (!user) {
+      db.prepare(`
+        INSERT INTO users (email, name, plan, avatar_seed, verified, created_at)
+        VALUES (?, ?, 'free', '', 1, datetime('now'))
+      `).run(decoded.email, decoded.name || "User");
+
+      const newUser = db.prepare(`
+        SELECT id, name, email, plan, avatar_seed, verified, created_at
+        FROM users WHERE email = ?
+      `).get(decoded.email);
+
+      user = newUser;
+    }
     
     // Получаем настройки пользователя
     const settings = db.prepare("SELECT tone, length, language FROM settings WHERE user_id=?")
