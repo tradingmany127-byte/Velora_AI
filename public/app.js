@@ -659,10 +659,8 @@ function openAuthModal() {
       <input id="loginEmail" class="input" placeholder="Email" />
       <input id="loginPass" class="input" type="password" placeholder="Пароль" />
     </div>
-    <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
-      <button class="btn" id="loginBtn">Войти</button>
-    </div>
-    <div style="margin-top:8px; text-align:center;">
+    <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+      <button class="btn primary" id="loginBtn">Войти</button>
       <button class="btn ghost" id="forgotPasswordBtn" style="font-size:12px; padding:4px 8px;">Забыл пароль?</button>
     </div>
 
