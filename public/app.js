@@ -8,6 +8,7 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signInWithPopup,
+  signInWithRedirect,
   sendEmailVerification,
   signOut
 } from "./firebase.js";
@@ -733,6 +734,87 @@ if (btn) {
 }
     };
   }
+
+  const googleBtn = document.getElementById("googleBtn");
+  if (googleBtn) {
+    googleBtn.onclick = async () => {
+      await loginWithGoogle();
+    };
+  }
+}
+
+async function loginWithGoogle() {
+  try {
+    // Показываем индикатор загрузки
+    const googleBtn = document.getElementById("googleBtn");
+    if (googleBtn) {
+      googleBtn.disabled = true;
+      googleBtn.textContent = "Загрузка...";
+    }
+
+    // Определяем, использовать popup или redirect
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    
+    let result;
+    
+    if (isMobile || isSafari) {
+      // Для мобильных и Safari используем redirect
+      await signInWithRedirect(firebaseAuth, googleProvider);
+      return; // Редирект прервет выполнение, страница перезагрузится
+    } else {
+      // Для десктопа используем popup
+      result = await signInWithPopup(firebaseAuth, googleProvider);
+    }
+
+    // Обработка успешного входа (только для popup)
+    if (result && result.user) {
+      console.log("Google auth success:", result.user);
+      
+      // Закрываем модальное окно
+      closeModal();
+      
+      // Запускаем post-auth процесс
+      await bootAfterAuth("google");
+      
+      toast("Успех", "Вы вошли через Google");
+    }
+
+  } catch (error) {
+    console.error("Google auth error:", error);
+    
+    // Восстанавливаем кнопку
+    const googleBtn = document.getElementById("googleBtn");
+    if (googleBtn) {
+      googleBtn.disabled = false;
+      googleBtn.textContent = "Войти через Google";
+    }
+    
+    // Обработка конкретных ошибок
+    if (error.code === 'auth/popup-closed-by-user') {
+      toast("Отмена", "Окно входа было закрыто");
+    } else if (error.code === 'auth/popup-blocked') {
+      toast("Блокировка", "Всплывающее окно заблокировано. Разрешите всплывающие окна и попробуйте снова.");
+    } else if (error.code === 'auth/cancelled-popup-request') {
+      toast("Отмена", "Запрос на вход был отменен");
+    } else if (error.code === 'auth/unauthorized-domain') {
+      toast("Ошибка домена", "Этот домен не авторизован для Google входа");
+    } else if (error.code === 'auth/user-not-found') {
+      toast("Ошибка", "Пользователь не найден");
+    } else if (error.code === 'auth/wrong-password') {
+      toast("Ошибка", "Неверный пароль");
+    } else if (error.code === 'auth/email-already-in-use') {
+      toast("Ошибка", "Email уже используется");
+    } else if (error.code === 'auth/invalid-email') {
+      toast("Ошибка", "Неверный email");
+    } else if (error.code === 'auth/too-many-requests') {
+      toast("Ошибка", "Слишком много попыток. Попробуйте позже");
+    } else if (error.code === 'auth/network-request-failed') {
+      toast("Ошибка сети", "Проверьте подключение к интернету");
+    } else {
+      toast("Ошибка входа", error.message || "Не удалось войти через Google");
+    }
+  }
 }
 
 async function bootAfterAuth(source) {
@@ -768,8 +850,6 @@ async function bootAfterAuth(source) {
   // ВАЖНО: Помечаем, что bootAfterAuth уже выполнен
   window._bootAfterAuthCompleted = true;
 }
-
-  
 
 async function refreshProfileSilent() {
   if (!firebaseAuth.currentUser) return;
@@ -1518,23 +1598,6 @@ async function login(email, password) {
         break;
       default:
         message = "Ошибка входа";
-    }
-    toast("Ошибка", message);
-  }
-}
-
-async function loginWithGoogle() {
-  try {
-    const result = await signInWithPopup(firebaseAuth, googleProvider);
-    const user = result.user;
-    toast("Успех", "Вход через Google выполнен");
-    await bootAfterAuth("firebase");
-    console.log("Google login:", result.user);
-  } catch (error) {
-    console.error(error);
-    let message = "Ошибка входа через Google";
-    if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
-      message = "Вход через Google был отменён";
     }
     toast("Ошибка", message);
   }
