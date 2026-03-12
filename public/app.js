@@ -773,6 +773,9 @@ if (btn) {
 
 async function loginWithGoogle() {
   try {
+    googleProvider.setCustomParameters({
+  prompt: "select_account"
+});
     // Показываем индикатор загрузки
     const googleBtn = document.getElementById("googleBtn");
     if (googleBtn) {
