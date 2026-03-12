@@ -22,12 +22,10 @@ async function handleGoogleRedirect() {
     const result = await getRedirectResult(firebaseAuth);
     console.log("redirect result:", result);
 
-    if (!result || !result.user) {
-      console.log("No redirect result user");
-      return false;
-    }
+    
 
     const user = result.user;
+    window.__bootAfterAuthCompleted = false;
     console.log("Google redirect login success:", user);
 
     const token = await user.getIdToken();
