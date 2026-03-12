@@ -991,6 +991,17 @@ async function bootAfterAuth(source) {
   // 5) Показываем основной интерфейс без автоматического создания чата
   renderChat?.();
   
+  // 6) Показываем welcome панель для новых пользователей
+  if (source === "firebase" && !localStorage.getItem('velora_welcome_panel_seen')) {
+    // Помечаем пользователя как нового для welcome панели
+    localStorage.setItem('velora_new_user_registration', 'true');
+    
+    // Инициализируем welcome панель
+    if (typeof welcomePanel !== 'undefined') {
+      welcomePanel.init();
+    }
+  }
+  
   // ВАЖНО: Помечаем, что bootAfterAuth уже выполнен
   window._bootAfterAuthCompleted = true;
 }
