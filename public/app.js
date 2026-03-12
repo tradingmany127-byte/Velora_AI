@@ -17,29 +17,51 @@ import {
 // Обработка возврата после Google redirect (важно для мобильных)
 async function handleGoogleRedirect() {
   try {
+    console.log("handleGoogleRedirect started");
+
     const result = await getRedirectResult(firebaseAuth);
+    console.log("redirect result:", result);
 
-    if (result && result.user) {
-      const user = result.user;
-
-      console.log("Google redirect login success:", user);
-
-      const token = await user.getIdToken();
-
-      // Отправляем токен на backend
-      await fetch("/api/auth/google", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        }
-      });
-
-      console.log("Google login completed");
+    if (!result || !result.user) {
+      console.log("No redirect result user");
+      return false;
     }
+
+    const user = result.user;
+    console.log("Google redirect login success:", user);
+
+    const token = await user.getIdToken();
+
+    const r = await fetch("/api/auth/google", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      }
+    });
+
+    let data = {};
+    try {
+      data = await r.json();
+    } catch (_) {}
+
+    console.log("backend google auth response:", r.status, data);
+
+    if (!r.ok) {
+      throw new Error(data?.error || "Google backend auth failed");
+    }
+
+    closeModal();
+    await bootAfterAuth("google");
+    toast("Успех", "Вы вошли через Google");
+
+    console.log("Google redirect login completed");
+    return true;
 
   } catch (error) {
     console.error("Redirect login error:", error);
+    toast("Ошибка входа", error.message || "Не удалось войти через Google");
+    return false;
   }
 }
 
