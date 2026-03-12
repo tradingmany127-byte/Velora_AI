@@ -992,7 +992,10 @@ async function bootAfterAuth(source) {
   renderChat?.();
   
   // 6) Показываем welcome панель для новых пользователей
-  if (source === "firebase" && !localStorage.getItem('velora_welcome_panel_seen')) {
+  const isFirstLogin = !localStorage.getItem('velora_welcome_panel_seen');
+  const isNewUser = loginTime > 0 && (Date.now() - loginTime) < 5000; // Первый вход в последние 5 секунд
+  
+  if (isFirstLogin && isNewUser) {
     // Помечаем пользователя как нового для welcome панели
     localStorage.setItem('velora_new_user_registration', 'true');
     

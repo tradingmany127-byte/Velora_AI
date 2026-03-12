@@ -10,7 +10,9 @@ class WelcomePanel {
   shouldShow() {
     // Показываем только для новых пользователей
     const hasSeenWelcome = localStorage.getItem('velora_welcome_panel_seen');
-    const isNewUser = localStorage.getItem('velora_new_user_registration');
+    const isNewUser = localStorage.getItem('velora_new_user_registration') === 'true';
+    
+    console.log('WelcomePanel shouldShow check:', { hasSeenWelcome, isNewUser });
     
     return !hasSeenWelcome && isNewUser;
   }
@@ -38,7 +40,17 @@ class WelcomePanel {
 
   // Показываем панель
   show() {
-    if (this.isVisible || !this.shouldShow()) return;
+    console.log('WelcomePanel.show() called, isVisible:', this.isVisible);
+    
+    if (this.isVisible || !this.shouldShow()) {
+      console.log('WelcomePanel.show() early return:', { 
+        isVisible: this.isVisible, 
+        shouldShow: this.shouldShow() 
+      });
+      return;
+    }
+
+    console.log('WelcomePanel.show() - creating panel');
 
     // Создаем и добавляем HTML
     const container = document.createElement('div');
@@ -53,6 +65,7 @@ class WelcomePanel {
     this.attachEventListeners();
 
     this.isVisible = true;
+    console.log('WelcomePanel.show() - panel is now visible');
   }
 
   // Закрываем панель
