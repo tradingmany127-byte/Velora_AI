@@ -46,20 +46,7 @@ async function handleGoogleRedirect() {
 // запускаем при загрузке страницы
 handleGoogleRedirect();
 let loginTime = 0;
-const provider = new googleProvider();
 
-async function loginWithGoogle() {
-
-  const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-
-  if (isMobile) {
-    await signInWithRedirect(firebaseAuth, provider);
-  } else {
-    const result = await signInWithPopup(firebaseAuth, provider);
-    console.log("Popup login:", result.user);
-  }
-
-}
 // Общая функция для получения авторизационных заголовков
 async function getAuthHeaders() {
   const headers = { "Content-Type": "application/json" };
