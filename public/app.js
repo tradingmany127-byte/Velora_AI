@@ -92,6 +92,7 @@ const state = {
   activeChatId: null,
   activeMode: "free", // free | pro
   guestSession: [], // не сохраняем в localStorage, только RAM
+  isWaitingResponse: false, // флаг блокировки отправки
 };
 
 onAuthStateChanged(firebaseAuth, async (user) => {
@@ -418,18 +419,33 @@ async function loadChat(chatId) {
 
 async function sendMessage(text) {
   const msg = String(text || "").trim();
-  if (!msg) return;
+  if (!msg || state.isWaitingResponse) return;
+
+  // Блокируем отправку
+  state.isWaitingResponse = true;
+  
+  // Очищаем input сразу
+  const input = document.getElementById("chatInput");
+  const sendBtn = document.getElementById("sendBtn");
+  if (input) input.value = "";
+  
+  // Блокируем кнопку
+  if (sendBtn) sendBtn.disabled = true;
 
   // Pro доступность
   if (state.activeMode === "pro") {
     if (!state.user) {
       toast("Pro только после входа", "Зарегистрируйся и выбери план.");
+      state.isWaitingResponse = false;
+      if (sendBtn) sendBtn.disabled = false;
       return;
     }
     if (!state.profile?.profile?.limits?.pro) {
       toast("Velora Pro", "Этот чат доступен только для пользователей с подпиской Velora Pro или Velora Ultra.");
       state.activeMode = "free";
       renderChat();
+      state.isWaitingResponse = false;
+      if (sendBtn) sendBtn.disabled = false;
       return;
     }
   }
@@ -442,6 +458,9 @@ async function sendMessage(text) {
     state.guestSession.push({ role: "user", content: msg });
   }
   renderMessages();
+  
+  // Добавляем loader
+  addLoader();
 
   // call api
   const r = await API.post("/api/chat", {
@@ -450,20 +469,23 @@ async function sendMessage(text) {
     mode: state.activeMode
   });
 
+  // Убираем loader
+  removeLoader();
+
   if (!r.ok) {
     if (r.error === "DAILY_LIMIT") {
       toast("Лимит сообщений", `Сегодня лимит исчерпан. План: ${state.user?.plan || "FREE"}`);
-      return;
-    }
-    if (r.error === "PRO_NOT_CONFIGURED") {
+    } else if (r.error === "PRO_NOT_CONFIGURED") {
       toast("Pro не настроен", "На сервере нет OPENAI_API_KEY.");
-      return;
-    }
-    if (r.error === "LLM_ERROR") {
+    } else if (r.error === "LLM_ERROR") {
       toast("LLM ошибка", "Проверь, запущен ли локальный сервер модели (LM Studio/Ollama).");
-      return;
+    } else {
+      toast("Ошибка", r.error || "Не удалось получить ответ.");
     }
-    toast("Ошибка", r.error || "Не удалось получить ответ.");
+    
+    // Разблокируем при ошибке
+    state.isWaitingResponse = false;
+    if (sendBtn) sendBtn.disabled = false;
     return;
   }
 
@@ -476,6 +498,32 @@ async function sendMessage(text) {
 
   // обновим профиль (лимиты)
   if (state.user) await refreshProfileSilent();
+  
+  // Разблокируем после ответа
+  state.isWaitingResponse = false;
+  if (sendBtn) sendBtn.disabled = false;
+}
+
+function addLoader() {
+  const log = document.getElementById("chatLog");
+  if (!log) return;
+  
+  const loader = document.createElement("div");
+  loader.className = "chat-loader";
+  loader.id = "chatLoader";
+  loader.innerHTML = `
+    <div class="chat-loader-dot"></div>
+    <div class="chat-loader-dot"></div>
+    <div class="chat-loader-dot"></div>
+  `;
+  
+  log.appendChild(loader);
+  log.scrollTop = log.scrollHeight;
+}
+
+function removeLoader() {
+  const loader = document.getElementById("chatLoader");
+  if (loader) loader.remove();
 }
 
 function openModal({ title, body, footer }) {
