@@ -10,6 +10,7 @@ import {
   signInWithPopup,
   signInWithRedirect,
   sendEmailVerification,
+  sendPasswordResetEmail,
   signOut
 } from "./firebase.js";
 
@@ -661,6 +662,9 @@ function openAuthModal() {
     <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
       <button class="btn" id="loginBtn">Войти</button>
     </div>
+    <div style="margin-top:8px; text-align:center;">
+      <button class="btn ghost" id="forgotPasswordBtn" style="font-size:12px; padding:4px 8px;">Забыл пароль?</button>
+    </div>
 
     <div class="hr"></div>
     <div class="sub">Или:</div>
@@ -727,6 +731,13 @@ if (btn) {
   if (googleBtn) {
     googleBtn.onclick = async () => {
       await loginWithGoogle();
+    };
+  }
+
+  const forgotPasswordBtn = document.getElementById("forgotPasswordBtn");
+  if (forgotPasswordBtn) {
+    forgotPasswordBtn.onclick = () => {
+      openPasswordResetModal();
     };
   }
 }
@@ -802,6 +813,142 @@ async function loginWithGoogle() {
     } else {
       toast("Ошибка входа", error.message || "Не удалось войти через Google");
     }
+  }
+}
+
+function openPasswordResetModal() {
+  const body = `
+    <div class="sub">
+      Введите ваш email, и мы отправим ссылку для восстановления пароля.
+    </div>
+    
+    <div class="row" style="margin-top:15px;">
+      <input id="resetEmail" class="input" placeholder="Email" type="email" />
+    </div>
+    
+    <div style="margin-top:15px;">
+      <button class="btn primary" id="sendResetBtn" style="width:100%;">Отправить ссылку для восстановления</button>
+    </div>
+    
+    <div style="margin-top:10px; text-align:center;">
+      <button class="btn ghost" id="backToLoginBtn" style="font-size:12px; padding:4px 8px;">← Вернуться к входу</button>
+    </div>
+  `;
+
+  openModal({ 
+    title: "Восстановление пароля", 
+    body, 
+    footer: `<button class="btn" data-close="1">Закрыть</button>` 
+  });
+
+  // Обработчик отправки
+  const sendResetBtn = document.getElementById("sendResetBtn");
+  if (sendResetBtn) {
+    sendResetBtn.onclick = async () => {
+      await resetPassword();
+    };
+  }
+
+  // Обработчик возврата к входу
+  const backToLoginBtn = document.getElementById("backToLoginBtn");
+  if (backToLoginBtn) {
+    backToLoginBtn.onclick = () => {
+      closeModal();
+      openAuthModal();
+    };
+  }
+
+  // Автофокус на поле email
+  setTimeout(() => {
+    const resetEmail = document.getElementById("resetEmail");
+    if (resetEmail) {
+      resetEmail.focus();
+      // Автозаполнение email из формы входа, если возможно
+      const loginEmail = document.getElementById("loginEmail");
+      if (loginEmail && loginEmail.value && !resetEmail.value) {
+        resetEmail.value = loginEmail.value;
+      }
+    }
+  }, 100);
+}
+
+async function resetPassword() {
+  const emailInput = document.getElementById("resetEmail");
+  const sendBtn = document.getElementById("sendResetBtn");
+  
+  if (!emailInput || !sendBtn) return;
+
+  const email = emailInput.value?.trim();
+  
+  // Валидация email
+  if (!email) {
+    toast("Ошибка", "Введите email");
+    emailInput.focus();
+    return;
+  }
+  
+  if (!email.includes("@") || !email.includes(".")) {
+    toast("Ошибка", "Введите корректный email");
+    emailInput.focus();
+    return;
+  }
+
+  // Блокируем кнопку
+  sendBtn.disabled = true;
+  sendBtn.textContent = "Отправка...";
+
+  try {
+    await sendPasswordResetEmail(firebaseAuth, email);
+    
+    // Показываем успех
+    toast("Успех", "Мы отправили ссылку для восстановления пароля на вашу почту.");
+    
+    // Меняем интерфейс на сообщение об успехе
+    const modalBody = document.querySelector(".modal .body");
+    if (modalBody) {
+      modalBody.innerHTML = `
+        <div style="text-align: center; padding: 20px;">
+          <div style="font-size: 48px; margin-bottom: 16px;">📧</div>
+          <h3 style="margin-bottom: 12px;">Письмо отправлено!</h3>
+          <p style="color: var(--muted); margin-bottom: 20px;">
+            Мы отправили ссылку для восстановления пароля на <strong>${escapeHtml(email)}</strong>.<br/>
+            Проверьте вашу почту и следуйте инструкциям.
+          </p>
+          <div style="display: flex; gap: 10px; justify-content: center;">
+            <button class="btn" id="closeResetBtn">Закрыть</button>
+            <button class="btn ghost" id="resendResetBtn">Отправить еще раз</button>
+          </div>
+        </div>
+      `;
+      
+      // Обработчики для новых кнопок
+      document.getElementById("closeResetBtn")?.addEventListener("click", closeModal);
+      document.getElementById("resendResetBtn")?.addEventListener("click", () => {
+        resetPassword();
+      });
+    }
+    
+  } catch (error) {
+    console.error("Password reset error:", error);
+    
+    // Восстанавливаем кнопку
+    sendBtn.disabled = false;
+    sendBtn.textContent = "Отправить ссылку для восстановления";
+    
+    // Обработка конкретных ошибок
+    if (error.code === 'auth/user-not-found') {
+      toast("Ошибка", "Пользователь с таким email не найден");
+    } else if (error.code === 'auth/invalid-email') {
+      toast("Ошибка", "Неверный формат email");
+    } else if (error.code === 'auth/too-many-requests') {
+      toast("Ошибка", "Слишком много попыток. Попробуйте позже");
+    } else if (error.code === 'auth/network-request-failed') {
+      toast("Ошибка сети", "Проверьте подключение к интернету");
+    } else {
+      toast("Ошибка", error.message || "Не удалось отправить письмо");
+    }
+    
+    emailInput.focus();
   }
 }
 
