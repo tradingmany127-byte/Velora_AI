@@ -96,18 +96,6 @@ const state = {
   isWaitingResponse: false, // флаг блокировки отправки
 };
 
-onAuthStateChanged(firebaseAuth, async (user) => {
-  state.user = user || null;
-
-  if (user) {
-    try {
-      await loadChats();
-    } catch (e) {
-      console.error("Boot after auth failed", e);
-    }
-  }
-});
-
 let elApp, elModalRoot, elToasts, elWelcome;
 
 function initDOMElements() {
@@ -820,6 +808,9 @@ async function loginWithGoogle() {
 async function bootAfterAuth(source) {
   if (window._bootAfterAuthCompleted) return;
   
+  // Устанавливаем время входа для retry логики
+  loginTime = Date.now();
+  
   // 1) берем пользователя из Firebase
   const u = firebaseAuth.currentUser;
   if (!u) return;
@@ -1512,14 +1503,33 @@ async function boot() {
       await refreshProfileSilent();
       // загрузим первый чат или создадим
       const list = await API.get("/api/chats");
+      
       if (list.ok && list.chats?.length) {
         state.activeChatId = list.chats[0].id;
         await loadChat(state.activeChatId);
         return;
       }
+      
+      // Если UNAUTHORIZED и пользователь только что вошел через Google,
+      // даем backend время создать сессию и пробуем еще раз через 500ms
+      if (!list.ok && list.error === "UNAUTHORIZED" && loginTime > 0 && (Date.now() - loginTime) < 2000) {
+        console.log("Recent login detected, retrying chats load...");
+        setTimeout(async () => {
+          const retry = await API.get("/api/chats");
+          if (retry.ok && retry.chats?.length) {
+            state.activeChatId = retry.chats[0].id;
+            await loadChat(state.activeChatId);
+            return;
+          }
+          // Если и retry не сработал, создаем новый чат
+          await createNewChat();
+        }, 500);
+        return;
+      }
+      
       if (list._silentAuthError) {
-  console.warn("Silent auth error:", list._silentAuthError);
-}
+        console.warn("Silent auth error:", list._silentAuthError);
+      }
       await createNewChat();
     }
     
