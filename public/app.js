@@ -846,48 +846,8 @@ async function loginWithGoogle() {
 }
 
 // Обработка результата Google redirect для мобильных устройств
-async function handleGoogleRedirect() {
-  try {
-    const result = await getRedirectResult(firebaseAuth);
-    
-    if (result && result.user) {
-      console.log("Google redirect success:", result.user);
-      
-      // Закрываем модальное окно если оно открыто
-      closeModal();
-      
-      // Запускаем post-auth процесс
-      await bootAfterAuth("google");
-      
-      toast("Успех", "Вы вошли через Google");
-    } else if (result && result.credential) {
-      // Это может произойти при первом входе
-      console.log("Google redirect with credential:", result);
-      closeModal();
-      await bootAfterAuth("google");
-      toast("Успех", "Вы вошли через Google");
-    }
-  } catch (error) {
-    console.error("Google redirect error:", error);
-    
-    // Обработка конкретных ошибок redirect
-    if (error.code === 'auth/user-not-found') {
-      toast("Ошибка", "Пользователь не найден");
-    } else if (error.code === 'auth/wrong-password') {
-      toast("Ошибка", "Неверный пароль");
-    } else if (error.code === 'auth/email-already-in-use') {
-      toast("Ошибка", "Email уже используется");
-    } else if (error.code === 'auth/invalid-email') {
-      toast("Ошибка", "Неверный email");
-    } else if (error.code === 'auth/too-many-requests') {
-      toast("Ошибка", "Слишком много попыток. Попробуйте позже");
-    } else if (error.code === 'auth/network-request-failed') {
-      toast("Ошибка сети", "Проверьте подключение к интернету");
-    } else {
-      toast("Ошибка входа", error.message || "Не удалось войти через Google");
-    }
-  }
-}
+
+
 
 function openPasswordResetModal() {
   const body = `
