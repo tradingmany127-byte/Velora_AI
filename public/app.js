@@ -66,7 +66,7 @@ async function handleGoogleRedirect() {
 }
 
 // запускаем при загрузке страницы
-handleGoogleRedirect();
+
 let loginTime = 0;
 
 // Общая функция для получения авторизационных заголовков
