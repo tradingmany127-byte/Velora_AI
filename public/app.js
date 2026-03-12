@@ -479,6 +479,12 @@ async function sendMessage(text) {
       toast("Pro не настроен", "На сервере нет OPENAI_API_KEY.");
     } else if (r.error === "LLM_ERROR") {
       toast("LLM ошибка", "Проверь, запущен ли локальный сервер модели (LM Studio/Ollama).");
+    } else if (r.error === "AI_TEMPORARY_ERROR") {
+      toast("Временная ошибка AI", "Сервис перегружен. Попробуйте через минуту.");
+    } else if (r.error === "ALREADY_PROCESSING") {
+      toast("Подождите", "Предыдущее сообщение обрабатывается.");
+    } else if (r.error === "AI_NOT_CONFIGURED") {
+      toast("AI не настроен", "Отсутствует GEMINI_API_KEY.");
     } else {
       toast("Ошибка", r.error || "Не удалось получить ответ.");
     }

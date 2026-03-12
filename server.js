@@ -88,6 +88,17 @@ if (!admin.apps.length) {
 
 initDb();
 
+// Система отслеживания активных запросов
+const activeRequests = new Map(); // userId -> boolean
+
+function isUserWaitingForResponse(userId) {
+  return activeRequests.get(userId) || false;
+}
+
+function setUserWaitingStatus(userId, isWaiting) {
+  activeRequests.set(userId, isWaiting);
+}
+
 app.use(express.json({ limit: "1mb" }));
 app.use(cookieParser());
 app.use(express.static(publicDir));
@@ -486,90 +497,196 @@ app.delete("/api/chats/:id", requireAuth, (req, res) => {
 
 // ---------------- CHAT (GUEST + AUTH) ----------------
 app.post("/api/chat", async (req, res) => {
-  const authData = await verifyFirebaseToken(req);
+  const startTime = Date.now();
+  console.log(`[CHAT] Request started at ${new Date().toISOString()}`);
+  
+  try {
+    const authData = await verifyFirebaseToken(req);
 
-  // Если нет Firebase token - это гость
-  if (!authData || !authData.user) {
+    // Если нет Firebase token - это гость
+    if (!authData || !authData.user) {
+      const { message, chatId, mode } = req.body || {};
+      const text = String(message || "").trim();
+      if (!text) {
+        console.log("[CHAT] Empty message from guest");
+        return res.json({ ok: false, error: "EMPTY" });
+      }
+
+      console.log(`[CHAT] Guest message: "${text.substring(0, 50)}..."`);
+
+      // Гостевой режим - без истории и лимитов
+      try {
+        const reply = await generateReply({
+          message: text,
+          history: [],
+          mode: "free",
+          env: process.env,
+          userSettings: { tone: "soft", length: "normal", language: "ru" },
+          chatHistory: [],
+          userMessage: text
+        });
+
+        if (!reply || typeof reply !== 'string' || reply.trim() === '') {
+          console.error("[CHAT] AI returned empty response for guest");
+          return res.json({ ok: false, error: "AI_TEMPORARY_ERROR" });
+        }
+
+        console.log(`[CHAT] Guest success, reply length: ${reply.length}`);
+        return res.json({ ok: true, reply });
+      } catch (err) {
+        console.error("[CHAT] Guest AI error:", err);
+        
+        // Обработка конкретных ошибок AI
+        if (err.message?.includes("GEMINI_NOT_CONFIGURED")) {
+          return res.json({ ok: false, error: "AI_NOT_CONFIGURED" });
+        }
+        if (err.message?.includes("quota") || err.message?.includes("rate") || err.message?.includes("429")) {
+          return res.json({ ok: false, error: "AI_TEMPORARY_ERROR" });
+        }
+        if (err.message?.includes("network") || err.message?.includes("timeout")) {
+          return res.json({ ok: false, error: "AI_TEMPORARY_ERROR" });
+        }
+        
+        return res.json({ ok: false, error: "AI_TEMPORARY_ERROR" });
+      }
+    }
+
+    // Авторизованный пользователь
+    const user = authData.user;
+    const settings = authData.settings;
     const { message, chatId, mode } = req.body || {};
     const text = String(message || "").trim();
-    if (!text) return res.json({ ok: false, error: "EMPTY" });
+    if (!text) {
+      console.log(`[CHAT] Empty message from user ${user.id}`);
+      return res.json({ ok: false, error: "EMPTY" });
+    }
 
-    // Гостевой режим - без истории и лимитов
+    console.log(`[CHAT] User ${user.id} message: "${text.substring(0, 50)}..."`);
+
+    // Проверка на параллельные запросы
+    if (isUserWaitingForResponse(user.id)) {
+      console.log(`[CHAT] User ${user.id} already waiting for response, rejecting`);
+      return res.json({ ok: false, error: "ALREADY_PROCESSING" });
+    }
+
+    // Устанавливаем флаг ожидания
+    setUserWaitingStatus(user.id, true);
+
     try {
+      // режим: free/pro
+      let useMode = (mode === "pro" ? "pro" : "free");
+
+      // ограничения Pro: только если план позволяет
+      if (useMode === "pro") {
+        const lim = planLimits(user.plan);
+        if (!lim.pro) {
+          console.log(`[CHAT] User ${user.id} plan ${user.plan} doesn't support pro mode`);
+          return res.json({ ok: false, error: "PLAN_REQUIRED" });
+        }
+      }
+
+      // лимиты сообщений
+      const lim = planLimits(user.plan);
+      const usage = getUsage(user.id);
+      if (usage.msg_count >= lim.msgPerDay) {
+        console.log(`[CHAT] User ${user.id} daily limit exceeded: ${usage.msg_count}/${lim.msgPerDay}`);
+        return res.json({ ok: false, error: "DAILY_LIMIT", limit: lim.msgPerDay });
+      }
+
+      // История для LLM: если юзер авторизован и передан chatId — берём последние сообщения
+      let history = [];
+      if (user && chatId) {
+        const owns = db.prepare("SELECT id FROM chats WHERE id=? AND user_id=?").get(chatId, user.id);
+        if (owns) {
+          history = db.prepare(`
+            SELECT role, content
+            FROM messages
+            WHERE chat_id=?
+            ORDER BY created_at DESC
+            LIMIT 10
+          `).all(chatId).reverse();
+        }
+      }
+
+      console.log(`[CHAT] Generating reply for user ${user.id}, mode: ${useMode}, history: ${history.length} messages`);
+
       const reply = await generateReply({
         message: text,
-        history: [],
-        mode: "free"
+        history,
+        mode: useMode,
+        plan: user.plan,
+        settings,
+        env: process.env,
+        userSettings: settings,
+        chatHistory: history,
+        userMessage: text
       });
+
+      if (!reply || typeof reply !== 'string' || reply.trim() === '') {
+        console.error(`[CHAT] AI returned empty response for user ${user.id}`);
+        return res.json({ ok: false, error: "AI_TEMPORARY_ERROR" });
+      }
+
+      console.log(`[CHAT] AI success for user ${user.id}, reply length: ${reply.length}`);
+
+      // Сохраняем сообщение в БД если есть chatId
+      if (chatId && user) {
+        const owns = db.prepare("SELECT id FROM chats WHERE id=? AND user_id=?").get(chatId, user.id);
+        if (owns) {
+          try {
+            db.prepare("INSERT INTO messages (chat_id, role, content, created_at) VALUES (?,?,?,?)")
+              .run(chatId, "user", text, Date.now());
+            db.prepare("INSERT INTO messages (chat_id, role, content, created_at) VALUES (?,?,?,?)")
+              .run(chatId, "assistant", reply, Date.now());
+            console.log(`[CHAT] Messages saved to chat ${chatId}`);
+          } catch (dbErr) {
+            console.error(`[CHAT] Database error saving messages:`, dbErr);
+            // Не прерываем ответ, но логируем ошибку
+          }
+        }
+      }
+
+      const duration = Date.now() - startTime;
+      console.log(`[CHAT] User ${user.id} request completed in ${duration}ms`);
+
       return res.json({ ok: true, reply });
+
     } catch (err) {
-      console.error("Chat generation error:", err);
-      return res.status(500).json({ ok: false, error: "SERVER_ERROR" });
-    }
-  }
-
-  // Авторизованный пользователь
-  const user = authData.user;
-  const settings = authData.settings;
-  const { message, chatId, mode } = req.body || {};
-  const text = String(message || "").trim();
-  if (!text) return res.json({ ok: false, error: "EMPTY" });
-
-  // режим: free/pro
-  let useMode = (mode === "pro" ? "pro" : "free");
-
-  // ограничения Pro: только если план позволяет
-  if (useMode === "pro") {
-    const lim = planLimits(user.plan);
-    if (!lim.pro) return res.json({ ok: false, error: "PLAN_REQUIRED" });
-  }
-
-  // лимиты сообщений
-  const lim = planLimits(user.plan);
-  const usage = getUsage(user.id);
-  if (usage.msg_count >= lim.msgPerDay) {
-    return res.json({ ok: false, error: "DAILY_LIMIT", limit: lim.msgPerDay });
-  }
-
-  try {
-    // История для LLM: если юзер авторизован и передан chatId — берём последние сообщения
-    let history = [];
-    if (user && chatId) {
-      const owns = db.prepare("SELECT id FROM chats WHERE id=? AND user_id=?").get(chatId, user.id);
-      if (owns) {
-        history = db.prepare(`
-          SELECT role, content
-          FROM messages
-          WHERE chat_id=?
-          ORDER BY created_at DESC
-          LIMIT 10
-        `).all(chatId).reverse();
+      console.error(`[CHAT] Error processing user ${user.id} request:`, err);
+      
+      // Обработка конкретных ошибок AI
+      if (err.message?.includes("GEMINI_NOT_CONFIGURED")) {
+        return res.json({ ok: false, error: "AI_NOT_CONFIGURED" });
       }
-    }
-
-    const reply = await generateReply({
-      message: text,
-      history,
-      mode: useMode,
-      plan: user.plan,
-      settings
-    });
-
-    // Сохраняем сообщение в БД если есть chatId
-    if (chatId && user) {
-      const owns = db.prepare("SELECT id FROM chats WHERE id=? AND user_id=?").get(chatId, user.id);
-      if (owns) {
-        db.prepare("INSERT INTO messages (chat_id, role, content, created_at) VALUES (?,?,?,?)")
-          .run(chatId, "user", text, Date.now());
-        db.prepare("INSERT INTO messages (chat_id, role, content, created_at) VALUES (?,?,?,?)")
-          .run(chatId, "assistant", reply, Date.now());
+      if (err.message?.includes("PRO_NOT_CONFIGURED")) {
+        return res.json({ ok: false, error: "PRO_NOT_CONFIGURED" });
       }
+      if (err.message?.includes("quota") || err.message?.includes("rate") || err.message?.includes("429")) {
+        return res.json({ ok: false, error: "AI_TEMPORARY_ERROR" });
+      }
+      if (err.message?.includes("network") || err.message?.includes("timeout")) {
+        return res.json({ ok: false, error: "AI_TEMPORARY_ERROR" });
+      }
+      if (err.message?.includes("LLM_ERROR")) {
+        return res.json({ ok: false, error: "AI_TEMPORARY_ERROR" });
+      }
+      
+      return res.json({ ok: false, error: "AI_TEMPORARY_ERROR" });
+    } finally {
+      // Всегда сбрасываем флаг ожидания
+      setUserWaitingStatus(user.id, false);
     }
 
-    return res.json({ ok: true, reply });
   } catch (err) {
-    console.error("Chat generation error:", err);
-    return res.status(500).json({ ok: false, error: "SERVER_ERROR" });
+    const duration = Date.now() - startTime;
+    console.error(`[CHAT] CRITICAL ERROR after ${duration}ms:`, err);
+    console.error(`[CHAT] Request body:`, req.body);
+    console.error(`[CHAT] Headers:`, req.headers);
+    
+    return res.status(500).json({ 
+      ok: false, 
+      error: "SERVER_ERROR" 
+    });
   }
 });
 

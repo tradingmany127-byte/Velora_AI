@@ -78,10 +78,54 @@ export async function generateReply({ mode, env, userSettings, chatHistory, user
     .map(m => `${m.role}: ${m.content}`)
     .join("\n");
 
-  const response = await gemini.models.generateContent({
-    model: "gemini-2.5-flash",
-    contents: prompt
-  });
+  console.log(`[LLM] Sending to Gemini, prompt length: ${prompt.length}`);
 
-  return response.text;
+  try {
+    const response = await gemini.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt
+    });
+
+    if (!response) {
+      console.error("[LLM] Gemini returned null response");
+      throw new Error("AI returned null response");
+    }
+
+    if (!response.text) {
+      console.error("[LLM] Gemini returned response without text field");
+      throw new Error("AI returned empty response");
+    }
+
+    const reply = response.text;
+    if (!reply || typeof reply !== 'string' || reply.trim() === '') {
+      console.error("[LLM] Gemini returned empty or invalid text");
+      throw new Error("AI returned empty response");
+    }
+
+    console.log(`[LLM] Gemini success, reply length: ${reply.length}`);
+    return reply;
+
+  } catch (err) {
+    console.error("[LLM] Gemini API error:", err);
+    
+    // Обработка специфичных ошибок Gemini
+    if (err.message?.includes("quota") || err.message?.includes("rate") || err.message?.includes("429")) {
+      throw new Error("quota exceeded");
+    }
+    
+    if (err.message?.includes("network") || err.message?.includes("timeout") || err.message?.includes("ECONNRESET")) {
+      throw new Error("network error");
+    }
+    
+    if (err.message?.includes("permission") || err.message?.includes("forbidden") || err.message?.includes("403")) {
+      throw new Error("API key invalid");
+    }
+    
+    if (err.message?.includes("not found") || err.message?.includes("404")) {
+      throw new Error("model not available");
+    }
+    
+    // Для всех остальных ошибок пробрасываем дальше
+    throw err;
+  }
 }
