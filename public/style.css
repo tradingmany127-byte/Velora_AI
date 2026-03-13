@@ -1242,3 +1242,161 @@ body.no-scroll {
 select.input {
   display: none;
 }
+/* ===== BACKGROUND OVERLAY ===== */
+
+.welcome-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 10, 18, 0.85);
+  backdrop-filter: blur(14px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transform: scale(1.05);
+  transition: all 0.7s cubic-bezier(.22,.61,.36,1);
+  z-index: 9999;
+}
+
+.welcome-overlay.show {
+  opacity: 1;
+  transform: scale(1);
+}
+
+
+/* ===== CARD ===== */
+
+.welcome-card {
+  background: linear-gradient(145deg, #0e1324, #151a2f);
+  border-radius: 18px;
+  padding: 40px 50px;
+  text-align: center;
+  max-width: 520px;
+  width: 90%;
+  border: 1px solid rgba(120,150,255,0.15);
+  box-shadow:
+    0 0 40px rgba(70,120,255,0.15),
+    inset 0 0 20px rgba(255,255,255,0.02);
+  transform: translateY(40px);
+  opacity: 0;
+  animation: welcomeWake 0.8s ease forwards;
+}
+
+
+/* ===== AI SPARK ===== */
+
+.welcome-spark {
+  font-size: 28px;
+  margin-bottom: 14px;
+  animation: pulseAI 2.5s infinite;
+}
+
+
+/* ===== TITLE ===== */
+
+.welcome-title {
+  font-size: 28px;
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 10px;
+  letter-spacing: 0.3px;
+}
+
+
+/* ===== SUBTITLE ===== */
+
+.welcome-subtitle {
+  color: #9aa4c6;
+  font-size: 15px;
+  margin-bottom: 28px;
+}
+
+
+/* ===== BUTTONS ===== */
+
+.welcome-actions {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+}
+
+
+/* ===== BASE BUTTON ===== */
+
+.welcome-btn {
+  padding: 12px 22px;
+  border-radius: 10px;
+  font-size: 14px;
+  border: none;
+  cursor: pointer;
+  transition: all .25s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+
+/* ===== CHAT BUTTON ===== */
+
+.welcome-btn-primary {
+  background: linear-gradient(135deg,#4f7cff,#6fa8ff);
+  color: white;
+  box-shadow: 0 0 10px rgba(80,120,255,0.5);
+}
+
+.welcome-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 0 15px rgba(80,120,255,0.9),
+    0 0 25px rgba(80,120,255,0.4);
+}
+
+
+/* ===== SETTINGS BUTTON ===== */
+
+.welcome-btn-secondary {
+  background: transparent;
+  border: 1px solid rgba(120,150,255,0.3);
+  color: #c8d1ff;
+}
+
+.welcome-btn-secondary:hover {
+  background: rgba(120,150,255,0.1);
+  border-color: rgba(120,150,255,0.6);
+  box-shadow: 0 0 10px rgba(120,150,255,0.4);
+}
+
+
+/* ===== CARD WAKE ANIMATION ===== */
+
+@keyframes welcomeWake {
+  from {
+    transform: translateY(50px) scale(0.96);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+
+/* ===== AI PULSE ===== */
+
+@keyframes pulseAI {
+
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+
+  50% {
+    transform: scale(1.25);
+    opacity: 1;
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+
+}
