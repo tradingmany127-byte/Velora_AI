@@ -8,13 +8,13 @@ class WelcomePanel {
 
   // Проверяем, показывать ли welcome панель
   shouldShow() {
-    // Показываем только для новых пользователей
+    // Показываем только после успешной регистрации
     const hasSeenWelcome = localStorage.getItem('velora_welcome_panel_seen');
-    const isNewUser = localStorage.getItem('velora_new_user_registration') === 'true';
+    const shouldShowAfterSignup = sessionStorage.getItem('showWelcomeAfterSignup') === '1';
     
-    console.log('WelcomePanel shouldShow check:', { hasSeenWelcome, isNewUser });
+    console.log('WelcomePanel shouldShow check:', { hasSeenWelcome, shouldShowAfterSignup });
     
-    return !hasSeenWelcome && isNewUser;
+    return !hasSeenWelcome && shouldShowAfterSignup;
   }
 
   // Создаем HTML структуру
@@ -122,6 +122,9 @@ class WelcomePanel {
     // Помечаем, что пользователь видел welcome панель
     localStorage.setItem('velora_welcome_panel_seen', 'true');
     
+    // Очищаем флаг регистрации
+    sessionStorage.removeItem('showWelcomeAfterSignup');
+    
     // Закрываем панель
     this.hide();
     
@@ -138,6 +141,9 @@ class WelcomePanel {
   handleSettings() {
     // Помечаем, что пользователь видел welcome панель
     localStorage.setItem('velora_welcome_panel_seen', 'true');
+    
+    // Очищаем флаг регистрации
+    sessionStorage.removeItem('showWelcomeAfterSignup');
     
     // Закрываем панель
     this.hide();

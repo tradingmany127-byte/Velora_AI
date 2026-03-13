@@ -1715,6 +1715,10 @@ async function register(email, password) {
   try {
     const userCredential = await createUserWithEmailAndPassword(firebaseAuth, email, password);
     await sendEmailVerification(userCredential.user);
+    
+    // Устанавливаем флаг успешной регистрации для welcome панели
+    sessionStorage.setItem('showWelcomeAfterSignup', '1');
+    
     toast("Успех", "Регистрация выполнена. Мы отправили письмо для подтверждения почты.");
     // Изменить модалку на сообщение о подтверждении
     updateModalToVerification();
@@ -1863,6 +1867,19 @@ document.addEventListener("click", async (e) => {
       if (firebaseAuth.currentUser?.emailVerified) {
         toast("Успех", "Почта подтверждена");
         await bootAfterAuth("firebase");
+        
+        // Показываем welcome панель после успешной регистрации
+        const shouldShowWelcome = sessionStorage.getItem('showWelcomeAfterSignup') === '1';
+        if (shouldShowWelcome) {
+          sessionStorage.removeItem('showWelcomeAfterSignup'); // Очищаем флаг
+          
+          // Показываем welcome панель с задержкой для загрузки UI
+          setTimeout(() => {
+            if (typeof welcomePanel !== 'undefined') {
+              welcomePanel.show();
+            }
+          }, 800);
+        }
       } else {
         toast("Ошибка", "Почта ещё не подтверждена");
       }
