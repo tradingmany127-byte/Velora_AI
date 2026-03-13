@@ -1865,7 +1865,6 @@ document.addEventListener("click", async (e) => {
         toast("Успех", "Почта подтверждена");
         await bootAfterAuth("firebase");
         
-        // Показываем welcome панель после успешной регистрации
         const shouldShowWelcome = localStorage.getItem('showWelcomeAfterSignup') === '1';
         if (shouldShowWelcome) {
           localStorage.removeItem('showWelcomeAfterSignup'); // Очищаем флаг
