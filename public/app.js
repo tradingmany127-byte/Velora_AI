@@ -1657,14 +1657,7 @@ async function boot() {
   // 0.1. Обрабатываем возможный Google redirect (для мобильных устройств)
   await handleGoogleRedirect();
   
-  // 1. Сначала проверяем welcome - ДО auth-логики
-  const isFirstVisit = !localStorage.getItem('velora_welcome_seen');
-  if (isFirstVisit) {
-    showWelcome('гость');
-    return; // Останавливаем, пока пользователь не выберет действие
-  }
-  
-  // 2. Потом auth-логика - работает независимо от welcome
+  // 1. Auth-логика - запускаем сразу
   onAuthStateChanged(firebaseAuth, async (user) => {
     // 🚨 Пропускаем, если bootAfterAuth уже выполнен
     if (window._bootAfterAuthCompleted) return;
@@ -1703,7 +1696,7 @@ async function boot() {
       await createNewChat();
     }
     
-    // 3. Всегда показываем интерфейс (для авторизованных и гостей)
+    // 2. Всегда показываем интерфейс (для авторизованных и гостей)
     renderChat();
   });
 }
