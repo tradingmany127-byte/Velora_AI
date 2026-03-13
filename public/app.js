@@ -991,18 +991,20 @@ async function bootAfterAuth(source) {
   // 5) Показываем основной интерфейс без автоматического создания чата
   renderChat?.();
   
-  // 6) Показываем welcome панель для новых пользователей
-  const isFirstLogin = !localStorage.getItem('velora_welcome_panel_seen');
-  const isNewUser = loginTime > 0 && (Date.now() - loginTime) < 5000; // Первый вход в последние 5 секунд
+  // 6) Показываем welcome панель для новых пользователей после регистрации
+  const shouldShowWelcome = localStorage.getItem('showWelcomeAfterSignup') === '1';
   
-  if (isFirstLogin && isNewUser) {
-    // Помечаем пользователя как нового для welcome панели
-    localStorage.setItem('velora_new_user_registration', 'true');
+  if (shouldShowWelcome) {
+    localStorage.removeItem('showWelcomeAfterSignup'); // Очищаем флаг
     
-    // Инициализируем welcome панель
-    if (typeof welcomePanel !== 'undefined') {
-      welcomePanel.init();
-    }
+    // Показываем welcome панель с задержкой для загрузки UI
+    setTimeout(() => {
+      if (typeof welcomePanel !== 'undefined') {
+        welcomePanel.show();
+      } else {
+        showWelcomePanelDirect();
+      }
+    }, 500);
   }
   
   // ВАЖНО: Помечаем, что bootAfterAuth уже выполнен
@@ -1712,7 +1714,7 @@ async function register(email, password) {
     await sendEmailVerification(userCredential.user);
     
     // Устанавливаем флаг успешной регистрации для welcome панели
-    sessionStorage.setItem('showWelcomeAfterSignup', '1');
+    localStorage.setItem('showWelcomeAfterSignup', '1');
     
     toast("Успех", "Регистрация выполнена. Мы отправили письмо для подтверждения почты.");
     // Изменить модалку на сообщение о подтверждении
@@ -1864,9 +1866,9 @@ document.addEventListener("click", async (e) => {
         await bootAfterAuth("firebase");
         
         // Показываем welcome панель после успешной регистрации
-        const shouldShowWelcome = sessionStorage.getItem('showWelcomeAfterSignup') === '1';
+        const shouldShowWelcome = localStorage.getItem('showWelcomeAfterSignup') === '1';
         if (shouldShowWelcome) {
-          sessionStorage.removeItem('showWelcomeAfterSignup'); // Очищаем флаг
+          localStorage.removeItem('showWelcomeAfterSignup'); // Очищаем флаг
           
           // Показываем welcome панель с задержкой для загрузки UI
           setTimeout(() => {
