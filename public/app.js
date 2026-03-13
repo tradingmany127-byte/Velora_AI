@@ -1875,8 +1875,12 @@ document.addEventListener("click", async (e) => {
           
           // Показываем welcome панель с задержкой для загрузки UI
           setTimeout(() => {
+            // Прямая проверка и вызов welcome панели
             if (typeof welcomePanel !== 'undefined') {
               welcomePanel.show();
+            } else {
+              // Если welcomePanel недоступен, создаем панель напрямую
+              showWelcomePanelDirect();
             }
           }, 800);
         }
@@ -1944,4 +1948,95 @@ function groupChatsByDate(chats) {
     out[key].push(c);
   });
   return out;
+}
+
+// Прямая функция показа welcome панели (fallback)
+function showWelcomePanelDirect() {
+  console.log('showWelcomePanelDirect() called');
+  
+  // Проверяем, не показана ли уже панель
+  if (document.getElementById('welcomeOverlay')) {
+    console.log('Welcome panel already exists');
+    return;
+  }
+  
+  // Создаем HTML
+  const welcomeHTML = `
+    <div class="welcome-overlay" id="welcomeOverlay">
+      <div class="welcome-panel">
+        <div class="welcome-title">✨ Добро пожаловать в Velora</div>
+        <div class="welcome-subtitle">AI поможет тебе достигать целей быстрее.</div>
+        
+        <div class="welcome-buttons">
+          <button class="welcome-primary-btn" id="welcomeGoToChat">
+            Перейти в чат
+          </button>
+          <button class="welcome-secondary-btn" id="welcomeSettings">
+            Настройки
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  // Добавляем в DOM
+  const container = document.createElement('div');
+  container.innerHTML = welcomeHTML;
+  document.body.appendChild(container.firstElementChild);
+  
+  // Добавляем обработчики
+  const goToChatBtn = document.getElementById('welcomeGoToChat');
+  const settingsBtn = document.getElementById('welcomeSettings');
+  const overlay = document.getElementById('welcomeOverlay');
+  
+  if (goToChatBtn) {
+    goToChatBtn.addEventListener('click', () => {
+      localStorage.setItem('velora_welcome_panel_seen', 'true');
+      overlay.classList.add('hiding');
+      setTimeout(() => {
+        overlay.remove();
+        // Фокус на чат
+        const chatInput = document.getElementById('chatInput');
+        if (chatInput) chatInput.focus();
+      }, 250);
+    });
+  }
+  
+  if (settingsBtn) {
+    settingsBtn.addEventListener('click', () => {
+      localStorage.setItem('velora_welcome_panel_seen', 'true');
+      overlay.classList.add('hiding');
+      setTimeout(() => {
+        overlay.remove();
+        // Открываем настройки
+        if (typeof openAiSettings === 'function') {
+          openAiSettings();
+        }
+      }, 250);
+    });
+  }
+  
+  // Закрытие по клику вне панели
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) {
+      localStorage.setItem('velora_welcome_panel_seen', 'true');
+      overlay.classList.add('hiding');
+      setTimeout(() => overlay.remove(), 250);
+    }
+  });
+  
+  // Закрытие по ESC
+  const handleEsc = (e) => {
+    if (e.key === 'Escape' && document.getElementById('welcomeOverlay')) {
+      localStorage.setItem('velora_welcome_panel_seen', 'true');
+      overlay.classList.add('hiding');
+      setTimeout(() => {
+        overlay.remove();
+        document.removeEventListener('keydown', handleEsc);
+      }, 250);
+    }
+  };
+  document.addEventListener('keydown', handleEsc);
+  
+  console.log('Welcome panel created and shown');
 }
