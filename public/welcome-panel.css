@@ -5,8 +5,8 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(8px);
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(6px);
   z-index: 9999;
   display: flex;
   align-items: center;
@@ -24,9 +24,9 @@
   border: 1px solid rgba(255, 255, 255, 0.1);
   padding: 40px 32px;
   text-align: center;
-  transform: scale(0.9) translateY(20px);
+  transform: scale(0.92) translateY(20px);
   opacity: 0;
-  animation: welcomePanelSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards;
+  animation: welcomePanelSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .welcome-title {
@@ -151,11 +151,11 @@
 
 /* Hide animations */
 .welcome-overlay.hiding {
-  animation: welcomeOverlayFadeOut 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: welcomeOverlayFadeOut 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .welcome-overlay.hiding .welcome-panel {
-  animation: welcomePanelSlideOut 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: welcomePanelSlideOut 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 @keyframes welcomeOverlayFadeOut {
@@ -167,7 +167,7 @@
 @keyframes welcomePanelSlideOut {
   to {
     opacity: 0;
-    transform: scale(0.95) translateY(-10px);
+    transform: scale(0.96) translateY(-10px);
   }
 }
 

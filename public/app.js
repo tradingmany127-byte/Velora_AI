@@ -1655,7 +1655,9 @@ async function boot() {
   initDOMElements();
   
   // 0.1. Обрабатываем возможный Google redirect (для мобильных устройств)
-  await handleGoogleRedirect();
+  if (typeof handleGoogleRedirect === "function") {
+    await handleGoogleRedirect();
+  }
   
   // 1. Auth-логика - запускаем сразу
   onAuthStateChanged(firebaseAuth, async (user) => {
