@@ -1833,68 +1833,6 @@ async function getOrLoginUser() {
   await signInWithEmailAndPassword(firebaseAuth, email, pass);
   return firebaseAuth.currentUser;
 }
-function showWelcomePanel() {
-  if (document.getElementById("welcomeOverlay")) return;
-
-  const overlay = document.createElement("div");
-  overlay.id = "welcomeOverlay";
-  overlay.className = "welcome-overlay";
-
-  overlay.innerHTML = `
-    <div class="welcome-card">
-      <div class="welcome-spark">✨</div>
-      <h2 class="welcome-title">Добро пожаловать в Velora</h2>
-      <p class="welcome-subtitle">AI поможет тебе достигать целей быстрее.</p>
-
-      <div class="welcome-actions">
-        <button id="welcomeChatBtn" class="welcome-btn welcome-btn-primary">
-          Перейти в чат
-        </button>
-        <button id="welcomeSettingsBtn" class="welcome-btn welcome-btn-secondary">
-          Настройки
-        </button>
-      </div>
-    </div>
-  `;
-
-  document.body.appendChild(overlay);
-
-  requestAnimationFrame(() => {
-    overlay.classList.add("show");
-  });
-
-  function closeWelcome(openSettings = false) {
-    overlay.classList.remove("show");
-
-    setTimeout(() => {
-      overlay.remove();
-      localStorage.removeItem("showWelcomeAfterSignup");
-
-      if (openSettings) {
-        if (typeof openSettingsModal === "function") {
-          openSettingsModal();
-        }
-      }
-    }, 250);
-  }
-
-  document.getElementById("welcomeChatBtn")?.addEventListener("click", () => {
-    closeWelcome(false);
-  });
-
-  document.getElementById("welcomeSettingsBtn")?.addEventListener("click", () => {
-    closeWelcome(true);
-  });
-}
-
-function maybeShowWelcomeAfterSignup() {
-  const shouldShow = localStorage.getItem("showWelcomeAfterSignup") === "1";
-  if (!shouldShow) return;
-
-  setTimeout(() => {
-    showWelcomePanel();
-  }, 250);
-}
 document.addEventListener("click", async (e) => {
 
   // Отправить письмо ещё раз
@@ -1932,7 +1870,6 @@ document.addEventListener("click", async (e) => {
           
           // Показываем welcome панель с задержкой для загрузки UI
           setTimeout(() => {
-            // Прямая проверка и вызов welcome панели
             if (typeof welcomePanel !== 'undefined') {
               welcomePanel.show();
             } else {
@@ -2005,95 +1942,4 @@ function groupChatsByDate(chats) {
     out[key].push(c);
   });
   return out;
-}
-
-// Прямая функция показа welcome панели (fallback)
-function showWelcomePanelDirect() {
-  console.log('showWelcomePanelDirect() called');
-  
-  // Проверяем, не показана ли уже панель
-  if (document.getElementById('welcomeOverlay')) {
-    console.log('Welcome panel already exists');
-    return;
-  }
-  
-  // Создаем HTML
-  const welcomeHTML = `
-    <div class="welcome-overlay" id="welcomeOverlay">
-      <div class="welcome-panel">
-        <div class="welcome-title">✨ Добро пожаловать в Velora</div>
-        <div class="welcome-subtitle">AI поможет тебе достигать целей быстрее.</div>
-        
-        <div class="welcome-buttons">
-          <button class="welcome-primary-btn" id="welcomeGoToChat">
-            Перейти в чат
-          </button>
-          <button class="welcome-secondary-btn" id="welcomeSettings">
-            Настройки
-          </button>
-        </div>
-      </div>
-    </div>
-  `;
-  
-  // Добавляем в DOM
-  const container = document.createElement('div');
-  container.innerHTML = welcomeHTML;
-  document.body.appendChild(container.firstElementChild);
-  
-  // Добавляем обработчики
-  const goToChatBtn = document.getElementById('welcomeGoToChat');
-  const settingsBtn = document.getElementById('welcomeSettings');
-  const overlay = document.getElementById('welcomeOverlay');
-  
-  if (goToChatBtn) {
-    goToChatBtn.addEventListener('click', () => {
-      localStorage.setItem('velora_welcome_panel_seen', 'true');
-      overlay.classList.add('hiding');
-      setTimeout(() => {
-        overlay.remove();
-        // Фокус на чат
-        const chatInput = document.getElementById('chatInput');
-        if (chatInput) chatInput.focus();
-      }, 250);
-    });
-  }
-  
-  if (settingsBtn) {
-    settingsBtn.addEventListener('click', () => {
-      localStorage.setItem('velora_welcome_panel_seen', 'true');
-      overlay.classList.add('hiding');
-      setTimeout(() => {
-        overlay.remove();
-        // Открываем настройки
-        if (typeof openAiSettings === 'function') {
-          openAiSettings();
-        }
-      }, 250);
-    });
-  }
-  
-  // Закрытие по клику вне панели
-  overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) {
-      localStorage.setItem('velora_welcome_panel_seen', 'true');
-      overlay.classList.add('hiding');
-      setTimeout(() => overlay.remove(), 250);
-    }
-  });
-  
-  // Закрытие по ESC
-  const handleEsc = (e) => {
-    if (e.key === 'Escape' && document.getElementById('welcomeOverlay')) {
-      localStorage.setItem('velora_welcome_panel_seen', 'true');
-      overlay.classList.add('hiding');
-      setTimeout(() => {
-        overlay.remove();
-        document.removeEventListener('keydown', handleEsc);
-      }, 250);
-    }
-  };
-  document.addEventListener('keydown', handleEsc);
-  
-  console.log('Welcome panel created and shown');
 }
