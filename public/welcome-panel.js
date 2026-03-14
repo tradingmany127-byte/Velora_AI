@@ -1,36 +1,46 @@
-// Welcome Panel Module
+// Premium Welcome Screen Module
 class WelcomePanel {
   constructor() {
     this.isVisible = false;
     this.overlay = null;
     this.panel = null;
+    this.textContainer = null;
+    this.phrases = [
+      "Иногда всё начинается с одного спокойного шага.",
+      "Velora рядом, чтобы помочь тебе двигаться дальше.",
+      "Без спешки. Просто двигайся к своей цели.",
+      "Ты уже на правильном пути."
+    ];
+    this.currentPhraseIndex = 0;
+    this.textAnimationTimeout = null;
   }
 
   // Проверяем, показывать ли welcome панель
   shouldShow() {
-    // Показываем только после успешной регистрации
     const hasSeenWelcome = localStorage.getItem('velora_welcome_panel_seen');
-    const shouldShowAfterSignup = sessionStorage.getItem('showWelcomeAfterSignup') === '1';
+    const shouldShowAfterSignup = localStorage.getItem('showWelcomeAfterSignup') === '1';
     
     console.log('WelcomePanel shouldShow check:', { hasSeenWelcome, shouldShowAfterSignup });
     
     return !hasSeenWelcome && shouldShowAfterSignup;
   }
 
-  // Создаем HTML структуру
+  // Создаем HTML структуру с анимированным текстом
   createHTML() {
     return `
       <div class="welcome-overlay" id="welcomeOverlay">
         <div class="welcome-panel">
           <div class="welcome-title">✨ Добро пожаловать в Velora</div>
-          <div class="welcome-subtitle">AI поможет тебе достигать целей быстрее.</div>
+          <div class="welcome-text-container">
+            <div class="welcome-text" id="welcomeText"></div>
+          </div>
           
           <div class="welcome-buttons">
             <button class="welcome-primary-btn" id="welcomeGoToChat">
-              Перейти в чат
+              <span class="btn-content">Перейти в чат</span>
             </button>
             <button class="welcome-secondary-btn" id="welcomeSettings">
-              Настройки
+              <span class="btn-content">Настройки</span>
             </button>
           </div>
         </div>
@@ -38,14 +48,56 @@ class WelcomePanel {
     `;
   }
 
+  // Анимация текста с цикличным показом фраз
+  startTextAnimation() {
+    if (!this.textContainer) return;
+    
+    const showNextPhrase = () => {
+      const textElement = this.textContainer;
+      const phrase = this.phrases[this.currentPhraseIndex];
+      
+      // Fade out
+      textElement.style.opacity = '0';
+      textElement.style.transform = 'translateY(10px)';
+      textElement.style.filter = 'blur(2px)';
+      
+      setTimeout(() => {
+        // Меняем текст
+        textElement.textContent = phrase;
+        
+        // Fade in
+        textElement.style.opacity = '1';
+        textElement.style.transform = 'translateY(0)';
+        textElement.style.filter = 'blur(0)';
+        
+        // Следующая фраза
+        this.currentPhraseIndex = (this.currentPhraseIndex + 1) % this.phrases.length;
+        
+        // Планируем следующую смену
+        this.textAnimationTimeout = setTimeout(showNextPhrase, 3000);
+      }, 300);
+    };
+    
+    // Запускаем первую фразу
+    setTimeout(showNextPhrase, 500);
+  }
+
+  // Останавливаем анимацию текста
+  stopTextAnimation() {
+    if (this.textAnimationTimeout) {
+      clearTimeout(this.textAnimationTimeout);
+      this.textAnimationTimeout = null;
+    }
+  }
+
   // Показываем панель
   show() {
     console.log('WelcomePanel.show() called, isVisible:', this.isVisible);
     
     if (this.isVisible) {
-  console.log('WelcomePanel.show() early return: already visible');
-  return;
-}
+      console.log('WelcomePanel.show() early return: already visible');
+      return;
+    }
 
     console.log('WelcomePanel.show() - creating panel');
 
@@ -57,9 +109,13 @@ class WelcomePanel {
     // Сохраняем ссылки на элементы
     this.overlay = document.getElementById('welcomeOverlay');
     this.panel = this.overlay.querySelector('.welcome-panel');
+    this.textContainer = this.overlay.querySelector('#welcomeText');
 
     // Добавляем обработчики событий
     this.attachEventListeners();
+
+    // Запускаем анимацию текста
+    this.startTextAnimation();
 
     this.isVisible = true;
     console.log('WelcomePanel.show() - panel is now visible');
@@ -68,6 +124,9 @@ class WelcomePanel {
   // Закрываем панель
   hide() {
     if (!this.isVisible) return;
+
+    // Останавливаем анимацию текста
+    this.stopTextAnimation();
 
     this.overlay.classList.add('hiding');
 
@@ -79,7 +138,8 @@ class WelcomePanel {
       this.isVisible = false;
       this.overlay = null;
       this.panel = null;
-    }, 250);
+      this.textContainer = null;
+    }, 300);
   }
 
   // Добавляем обработчики событий
@@ -120,7 +180,7 @@ class WelcomePanel {
     localStorage.setItem('velora_welcome_panel_seen', 'true');
     
     // Очищаем флаг регистрации
-    sessionStorage.removeItem('showWelcomeAfterSignup');
+    localStorage.removeItem('showWelcomeAfterSignup');
     
     // Закрываем панель
     this.hide();
@@ -140,7 +200,7 @@ class WelcomePanel {
     localStorage.setItem('velora_welcome_panel_seen', 'true');
     
     // Очищаем флаг регистрации
-    sessionStorage.removeItem('showWelcomeAfterSignup');
+    localStorage.removeItem('showWelcomeAfterSignup');
     
     // Закрываем панель
     this.hide();

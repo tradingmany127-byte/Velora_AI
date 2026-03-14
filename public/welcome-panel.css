@@ -1,4 +1,4 @@
-/* Welcome Panel Styles */
+/* Premium Welcome Screen Styles */
 .welcome-overlay {
   position: fixed;
   top: 0;
@@ -6,47 +6,83 @@
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.45);
-  backdrop-filter: blur(6px);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   z-index: 9999;
   display: flex;
   align-items: center;
   justify-content: center;
   opacity: 0;
-  animation: welcomeOverlayFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: welcomeOverlayFadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .welcome-panel {
-  width: 500px;
-  background: rgba(20, 20, 28, 0.9);
+  width: 480px;
+  max-width: 90vw;
+  background: rgba(20, 20, 28, 0.85);
   backdrop-filter: blur(20px);
-  border-radius: 18px;
-  box-shadow: 0 30px 100px rgba(0, 0, 0, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 40px 32px;
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 20px;
+  box-shadow: 
+    0 0 0 1px rgba(255, 255, 255, 0.1),
+    0 20px 60px rgba(0, 0, 0, 0.4),
+    0 0 120px rgba(107, 124, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 48px 40px;
   text-align: center;
-  transform: scale(0.92) translateY(20px);
+  transform: scale(0.88) translateY(24px);
   opacity: 0;
-  animation: welcomePanelSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: welcomePanelSlideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  position: relative;
+  overflow: hidden;
+}
+
+.welcome-panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(107, 124, 255, 0.05) 0%,
+    transparent 70%
+  );
+  pointer-events: none;
 }
 
 .welcome-title {
   font-size: 28px;
   font-weight: 700;
   color: #ffffff;
-  margin-bottom: 12px;
+  margin-bottom: 20px;
   opacity: 0;
   transform: translateY(10px);
-  animation: welcomeTitleSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0s forwards;
+  animation: welcomeTitleSlideIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
 }
 
-.welcome-subtitle {
-  font-size: 16px;
-  color: rgba(255, 255, 255, 0.7);
-  margin-bottom: 40px;
-  line-height: 1.5;
+.welcome-text-container {
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 32px;
   opacity: 0;
   transform: translateY(10px);
-  animation: welcomeSubtitleSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.15s forwards;
+  animation: welcomeTextSlideIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.4s forwards;
+}
+
+.welcome-text {
+  font-size: 17px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.5;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  text-shadow: 0 0 20px rgba(107, 124, 255, 0.3);
+  letter-spacing: 0.01em;
 }
 
 .welcome-buttons {
@@ -55,11 +91,11 @@
   gap: 16px;
   opacity: 0;
   transform: translateY(10px);
-  animation: welcomeButtonsSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards;
+  animation: welcomeButtonsSlideIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.6s forwards;
 }
 
 .welcome-primary-btn {
-  background: linear-gradient(135deg, #6b7cff, #8a5cff);
+  background: linear-gradient(135deg, #6b7cff 0%, #8a5cff 100%);
   color: #ffffff;
   border: none;
   padding: 16px 32px;
@@ -70,16 +106,20 @@
   position: relative;
   overflow: hidden;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 
+    0 4px 20px rgba(107, 124, 255, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+  letter-spacing: 0.01em;
 }
 
 .welcome-primary-btn::before {
   content: '';
   position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, transparent 60%);
   opacity: 0;
   transition: opacity 0.3s ease;
   pointer-events: none;
@@ -87,16 +127,23 @@
 
 .welcome-primary-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(107, 124, 255, 0.4);
+  box-shadow: 
+    0 8px 30px rgba(107, 124, 255, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.2) inset;
 }
 
 .welcome-primary-btn:hover::before {
   opacity: 1;
 }
 
+.welcome-primary-btn:active {
+  transform: translateY(0);
+}
+
 .welcome-secondary-btn {
   background: rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   color: rgba(255, 255, 255, 0.9);
   border: 1px solid rgba(255, 255, 255, 0.15);
   padding: 14px 28px;
@@ -105,16 +152,47 @@
   font-weight: 500;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+  letter-spacing: 0.01em;
+}
+
+.welcome-secondary-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.05);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
 }
 
 .welcome-secondary-btn:hover {
   background: rgba(255, 255, 255, 0.12);
   border-color: rgba(255, 255, 255, 0.25);
-  box-shadow: 0 4px 20px rgba(255, 255, 255, 0.1);
   transform: translateY(-1px);
+  box-shadow: 
+    0 4px 20px rgba(255, 255, 255, 0.1),
+    0 0 0 1px rgba(255, 255, 255, 0.1) inset;
 }
 
-/* Animations */
+.welcome-secondary-btn:hover::before {
+  opacity: 1;
+}
+
+.welcome-secondary-btn:active {
+  transform: translateY(0);
+}
+
+.btn-content {
+  position: relative;
+  z-index: 1;
+}
+
+/* Анимации появления */
 @keyframes welcomeOverlayFadeIn {
   to {
     opacity: 1;
@@ -135,7 +213,7 @@
   }
 }
 
-@keyframes welcomeSubtitleSlideIn {
+@keyframes welcomeTextSlideIn {
   to {
     opacity: 1;
     transform: translateY(0);
@@ -149,13 +227,13 @@
   }
 }
 
-/* Hide animations */
+/* Анимации скрытия */
 .welcome-overlay.hiding {
-  animation: welcomeOverlayFadeOut 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: welcomeOverlayFadeOut 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .welcome-overlay.hiding .welcome-panel {
-  animation: welcomePanelSlideOut 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: welcomePanelSlideOut 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 @keyframes welcomeOverlayFadeOut {
@@ -167,7 +245,7 @@
 @keyframes welcomePanelSlideOut {
   to {
     opacity: 0;
-    transform: scale(0.96) translateY(-10px);
+    transform: scale(0.96) translateY(-8px);
   }
 }
 
@@ -177,14 +255,35 @@
     width: 90%;
     max-width: 400px;
     margin: 20px;
-    padding: 32px 24px;
+    padding: 40px 32px;
   }
   
   .welcome-title {
     font-size: 24px;
   }
   
-  .welcome-subtitle {
+  .welcome-text {
+    font-size: 16px;
+  }
+  
+  .welcome-buttons {
+    gap: 14px;
+  }
+  
+  .welcome-primary-btn,
+  .welcome-secondary-btn {
+    padding: 14px 24px;
     font-size: 15px;
+  }
+}
+
+/* Улучшение для Retina дисплеев */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .welcome-panel {
+    border-width: 0.5px;
+  }
+  
+  .welcome-secondary-btn {
+    border-width: 0.5px;
   }
 }
