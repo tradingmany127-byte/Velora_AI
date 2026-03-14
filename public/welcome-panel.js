@@ -42,13 +42,10 @@ class WelcomePanel {
   show() {
     console.log('WelcomePanel.show() called, isVisible:', this.isVisible);
     
-    if (this.isVisible || !this.shouldShow()) {
-      console.log('WelcomePanel.show() early return:', { 
-        isVisible: this.isVisible, 
-        shouldShow: this.shouldShow() 
-      });
-      return;
-    }
+    if (this.isVisible) {
+  console.log('WelcomePanel.show() early return: already visible');
+  return;
+}
 
     console.log('WelcomePanel.show() - creating panel');
 
