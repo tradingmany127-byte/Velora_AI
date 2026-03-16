@@ -31,9 +31,11 @@ class WelcomePanel {
       <div class="welcome-overlay" id="welcomeOverlay">
         <div class="welcome-panel">
           <div class="welcome-title">✨ Добро пожаловать в Velora</div>
-          <div class="welcome-text-container">
-            <div class="welcome-text" id="welcomeText"></div>
-          </div>
+        <div class="welcome-text-container">
+    <div class="welcome-text" id="welcomeText">
+        Иногда всё начинается с одного спокойного шага.
+    </div>
+</div>
           
           <div class="welcome-buttons">
             <button class="welcome-primary-btn" id="welcomeGoToChat">
@@ -50,45 +52,33 @@ class WelcomePanel {
 
   // Анимация текста с цикличным показом фраз
   startTextAnimation() {
-    if (!this.textContainer) return;
-    
-    const showNextPhrase = () => {
-      const textElement = this.textContainer;
-      const phrase = this.phrases[this.currentPhraseIndex];
-      
-      // Fade out
-      textElement.style.opacity = '0';
-      textElement.style.transform = 'translateY(10px)';
-      textElement.style.filter = 'blur(2px)';
-      
-      setTimeout(() => {
-        // Меняем текст
-        textElement.textContent = phrase;
-        
-        // Fade in
-        textElement.style.opacity = '1';
-        textElement.style.transform = 'translateY(0)';
-        textElement.style.filter = 'blur(0)';
-        
-        // Следующая фраза
-        this.currentPhraseIndex = (this.currentPhraseIndex + 1) % this.phrases.length;
-        
-        // Планируем следующую смену
-        this.textAnimationTimeout = setTimeout(showNextPhrase, 3000);
-      }, 300);
-    };
-    
-    // Запускаем первую фразу
-    setTimeout(showNextPhrase, 500);
-  }
+  if (!this.textContainer) return;
 
-  // Останавливаем анимацию текста
-  stopTextAnimation() {
-    if (this.textAnimationTimeout) {
-      clearTimeout(this.textAnimationTimeout);
-      this.textAnimationTimeout = null;
-    }
-  }
+  const texts = [
+    "Иногда всё начинается с одного спокойного шага.",
+    "Velora рядом, чтобы помочь тебе двигаться дальше.",
+    "Без спешки. Просто двигайся к своей цели.",
+    "Ты на правильном пути."
+  ];
+
+  let index = 0;
+
+  this.textContainer.textContent = texts[index];
+  this.textContainer.classList.add("show");
+
+  this.textInterval = setInterval(() => {
+    this.textContainer.classList.remove("show");
+
+    setTimeout(() => {
+      index = (index + 1) % texts.length;
+      this.textContainer.textContent = texts[index];
+      this.textContainer.classList.add("show");
+    }, 400);
+
+  }, 3000);
+}
+
+  
 
   // Показываем панель
   show() {

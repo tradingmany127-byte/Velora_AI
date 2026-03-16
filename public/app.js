@@ -551,98 +551,11 @@ function closeModal() {
   elModalRoot.innerHTML = "";
 }
 
-function showWelcome(name) {
-  // Проверяем первый ли это визит
-  const isFirstVisit = !localStorage.getItem('velora_welcome_seen');
-  
-  // Если пользователь уже видел приветствие - не показываем
-  if (!isFirstVisit) {
-    renderChat();
-    return;
-  }
-  
-  elWelcome.classList.remove("hidden");
-  elWelcome.innerHTML = `
-    <div class="welcomePanelPremium">
-      <div class="welcomeGlow"></div>
-      <h1>Добро пожаловать в Velora AI</h1>
-      
-      <div class="welcomeMessages">
-        <div class="welcomeMessage" style="animation-delay: 0.6s">
-          <strong>Здесь идеи превращаются в проекты,</strong><br/>
-          а мысли — в реальные результаты.
-        </div>
-        <div class="welcomeMessage" style="animation-delay: 1.2s">
-          <strong>Velora создана, чтобы помогать вам</strong><br/>
-          думать быстрее, создавать больше и достигать целей легче.
-        </div>
-        <div class="welcomeMessage" style="animation-delay: 1.8s">
-          <strong>Velora — это больше чем инструмент.</strong><br/>
-          Это интеллектуальный помощник, который работает рядом с вами.
-        </div>
-        <div class="welcomeMessage" style="animation-delay: 2.4s">
-          <strong>Каждый большой проект начинается</strong><br/>
-          с одной идеи. Velora поможет вам превратить её во что-то большее.
-        </div>
-        <div class="welcomeMessage" style="animation-delay: 3.0s">
-          <strong>Вы здесь не случайно.</strong><br/>
-          Возможно именно сегодня начнётся ваш следующий большой проект.
-        </div>
-        <div class="welcomeMessage" style="animation-delay: 3.6s">
-          <strong>Velora готова помочь.</strong><br/>
-          Давайте создадим что-то по-настоящему интересное.
-        </div>
-      </div>
-      
-      <div class="welcomeButtons">
-        <button class="welcomeBtnPrimary" id="startWithVeloraBtn">
-          Начать с Velora
-          <div class="welcomeBtnSubtext">Создать аккаунт и открыть все возможности</div>
-        </button>
-        
-        <button class="welcomeBtnSecondary" id="justLookBtn">
-          Пока просто посмотреть
-          <div class="welcomeBtnSubtext">Открыть интерфейс и познакомиться с Velora</div>
-        </button>
-      </div>
-    </div>
-  `;
-  
-  // Обработчики кнопок
-  document.getElementById("startWithVeloraBtn").onclick = () => {
-    elWelcome.classList.add("hidden");
-    elWelcome.innerHTML="";
-    // Сразу сохраняем флаг первого визита
-    localStorage.setItem('velora_welcome_seen', 'true');
-    // Открываем модальное окно регистрации
-    openAuthModal();
-  };
-  
-  document.getElementById("justLookBtn").onclick = () => {
-    elWelcome.classList.add("hidden");
-    elWelcome.innerHTML="";
-    // Сразу сохраняем флаг первого визита
-    localStorage.setItem('velora_welcome_seen', 'true');
-    // Открываем основной интерфейс в гостевом режиме
-    renderChat();
-  };
-  
-  // Закрытие по клику на фон
-  elWelcome.onclick = (e) => {
-    if (e.target === elWelcome) {
-      elWelcome.classList.add("hidden");
-      elWelcome.innerHTML="";
-      // Сразу сохраняем флаг первого визита
-      localStorage.setItem('velora_welcome_seen', 'true');
-      renderChat();
-    }
-  };
-}
-
 function openAuthModal() {
   const body = `
     <div class="sub">
       
+{{ ... }
       
 
     <div class="row">
