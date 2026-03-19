@@ -3,12 +3,15 @@ import express from "express";
 import cookieParser from "cookie-parser";
 import bcrypt from "bcryptjs";
 import { nanoid } from "nanoid";
-
+import admin from "firebase-admin";
 import { db, initDb, ymdNow, planLimits } from "./db.js";
 import { makeMailer, sendVerifyCode } from "./mailer.js";
 import { generateReply } from "./llm.js";
 import path from "path";
 import { fileURLToPath } from "url";
+admin.initializeApp({
+  credential: admin.credential.applicationDefault()
+});
 const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -23,7 +26,26 @@ initDb();
 app.use(express.json({ limit: "1mb" }));
 app.use(cookieParser());
 app.use(express.static(publicDir));
+app.post("/api/auth/firebase-session", async (req, res) => {
+  try {
+    const { idToken } = req.body;
 
+    if (!idToken) {
+      return res.status(400).json({ error: "No token" });
+    }
+
+    const decoded = await admin.auth().verifyIdToken(idToken);
+
+    res.json({
+      uid: decoded.uid,
+      email: decoded.email,
+    });
+
+  } catch (err) {
+    console.error("Session error:", err);
+    res.status(401).json({ error: "Invalid token" });
+  }
+});
 app.get("/", (req, res) => {
   res.sendFile(path.join(publicDir, "index.html"));
 });
