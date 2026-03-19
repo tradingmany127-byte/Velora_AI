@@ -11,7 +11,7 @@ import { generateReply } from "./llm.js";
 import path from "path";
 import { fileURLToPath } from "url";
 const app = express();
-
+app.use(express.json());
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -267,13 +267,16 @@ app.post("/api/auth/logout", (req, res) => {
 // Firebase session bridge
 app.post("/api/auth/firebase-session", async (req, res) => {
   try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res.status(401).json({ ok: false, error: "UNAUTHORIZED" });
-    }
+   const authHeader = req.headers.authorization || "";
+const bearerToken = authHeader.startsWith("Bearer ")
+  ? authHeader.substring(7)
+  : null;
 
-    const token = authHeader.substring(7); // Remove "Bearer " prefix
-    
+const token = req.body?.idToken || bearerToken;
+
+if (!token) {
+  return res.status(400).json({ ok: false, error: "No token" });
+} 
     // Verify Firebase ID token
     let decodedToken;
     try {
