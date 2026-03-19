@@ -34,7 +34,31 @@ async function getAuthHeaders() {
   
   return headers;
 }
+async function bridgeFirebaseSession() {
+  const user = firebaseAuth.currentUser;
+  if (!user) {
+    throw new Error("No Firebase user");
+  }
 
+  const token = await user.getIdToken(true);
+
+  const res = await fetch("/api/auth/firebase-session", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`
+    },
+    credentials: "include"
+  });
+
+  const data = await res.json();
+
+  if (!res.ok || !data.ok) {
+    throw new Error(data?.error || "Failed to create backend session");
+  }
+
+  return data;
+}
 const API = {
   async get(url) {
     const headers = await getAuthHeaders();
@@ -767,7 +791,7 @@ async function loginWithGoogle() {
       // Для десктопа используем popup
       result = await signInWithPopup(firebaseAuth, googleProvider);
     }
-
+await bridgeFirebaseSession();
     // Обработка успешного входа (только для popup)
     if (result && result.user) {
       console.log("Google auth success:", result.user);
