@@ -46,7 +46,8 @@ async function bridgeFirebaseSession() {
   const res = await fetch("/api/auth/firebase-session", {
     method: "POST",
     headers: {
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${idToken}`
     },
     credentials: "include",
     body: JSON.stringify({ idToken })
