@@ -551,10 +551,100 @@ function closeModal() {
   elModalRoot.innerHTML = "";
 }
 
+function showWelcome(name) {
+  // Проверяем первый ли это визит
+  const isFirstVisit = !localStorage.getItem('velora_welcome_seen');
+  
+  // Если пользователь уже видел приветствие - не показываем
+  if (!isFirstVisit) {
+    renderChat();
+    return;
+  }
+  
+  elWelcome.classList.remove("hidden");
+  elWelcome.innerHTML = `
+    <div class="welcomePanelPremium">
+      <div class="welcomeGlow"></div>
+      <h1>Добро пожаловать в Velora AI</h1>
+      
+      <div class="welcomeMessages">
+        <div class="welcomeMessage" style="animation-delay: 0.6s">
+          <strong>Здесь идеи превращаются в проекты,</strong><br/>
+          а мысли — в реальные результаты.
+        </div>
+        <div class="welcomeMessage" style="animation-delay: 1.2s">
+          <strong>Velora создана, чтобы помогать вам</strong><br/>
+          думать быстрее, создавать больше и достигать целей легче.
+        </div>
+        <div class="welcomeMessage" style="animation-delay: 1.8s">
+          <strong>Velora — это больше чем инструмент.</strong><br/>
+          Это интеллектуальный помощник, который работает рядом с вами.
+        </div>
+        <div class="welcomeMessage" style="animation-delay: 2.4s">
+          <strong>Каждый большой проект начинается</strong><br/>
+          с одной идеи. Velora поможет вам превратить её во что-то большее.
+        </div>
+        <div class="welcomeMessage" style="animation-delay: 3.0s">
+          <strong>Вы здесь не случайно.</strong><br/>
+          Возможно именно сегодня начнётся ваш следующий большой проект.
+        </div>
+        <div class="welcomeMessage" style="animation-delay: 3.6s">
+          <strong>Velora готова помочь.</strong><br/>
+          Давайте создадим что-то по-настоящему интересное.
+        </div>
+      </div>
+      
+      <div class="welcomeButtons">
+        <button class="welcomeBtnPrimary" id="startWithVeloraBtn">
+          Начать с Velora
+          <div class="welcomeBtnSubtext">Создать аккаунт и открыть все возможности</div>
+        </button>
+        
+        <button class="welcomeBtnSecondary" id="justLookBtn">
+          Пока просто посмотреть
+          <div class="welcomeBtnSubtext">Открыть интерфейс и познакомиться с Velora</div>
+        </button>
+      </div>
+    </div>
+  `;
+  
+  // Обработчики кнопок
+  document.getElementById("startWithVeloraBtn").onclick = () => {
+    elWelcome.classList.add("hidden");
+    elWelcome.innerHTML="";
+    // Сразу сохраняем флаг первого визита
+    localStorage.setItem('velora_welcome_seen', 'true');
+    // Открываем модальное окно регистрации
+    openAuthModal();
+  };
+  
+  document.getElementById("justLookBtn").onclick = () => {
+    elWelcome.classList.add("hidden");
+    elWelcome.innerHTML="";
+    // Сразу сохраняем флаг первого визита
+    localStorage.setItem('velora_welcome_seen', 'true');
+    // Открываем основной интерфейс в гостевом режиме
+    renderChat();
+  };
+  
+  // Закрытие по клику на фон
+  elWelcome.onclick = (e) => {
+    if (e.target === elWelcome) {
+      elWelcome.classList.add("hidden");
+      elWelcome.innerHTML="";
+      // Сразу сохраняем флаг первого визита
+      localStorage.setItem('velora_welcome_seen', 'true');
+      renderChat();
+    }
+  };
+}
+
 function openAuthModal() {
   const body = `
     <div class="sub">
       
+      
+
     <div class="row">
       <input id="regName" class="input" placeholder="Имя пользователя" />
       <input id="regEmail" class="input" placeholder="Почта (Email)" />
@@ -585,6 +675,34 @@ function openAuthModal() {
 
 
   openModal({ title: "Вход / Регистрация", body, footer: `<button class="btn" data-close="1">Закрыть</button>` });
+setTimeout(() => {
+  const btn = document.getElementById("magicLinkBtn");
+
+if (btn) {
+  btn.onclick = async () => {
+    if (btn.dataset.sending === "1") return;
+    btn.dataset.sending = "1";
+    btn.disabled = true;
+
+    try {
+      const email = document.getElementById("loginEmail")?.value?.trim();
+      if (!email) {
+        toast("Ошибка", "Введите email");
+        return;
+      }
+
+      await sendMagicLink(email);
+
+    } catch (e) {
+      console.error(e);
+      toast("Ошибка", e.code || e.message);
+    } finally {
+      btn.dataset.sending = "0";
+      btn.disabled = false;
+      }
+    };
+  }
+}, 0);
   
   const regBtn = document.getElementById("regBtn");
   if (regBtn) {
@@ -600,11 +718,11 @@ function openAuthModal() {
     loginBtn.onclick = async () => {
       const email = document.getElementById("loginEmail")?.value?.trim();
       const password = document.getElementById("loginPass")?.value;
-      if (!email || !password) {
-        toast("Ошибка", "Введите email и пароль");
-        return;
-      }
       await login(email, password);
+      if (!email || !password) {
+  alert("Введите email и пароль");
+  return;
+}
     };
   }
 
@@ -701,32 +819,8 @@ async function loginWithGoogle() {
 }
 
 // Обработка результата Google redirect для мобильных устройств
-async function handleGoogleRedirect() {
-  try {
-    // Получаем результат редиректа
-    const result = await getRedirectResult(firebaseAuth);
-    
-    if (result && result.user) {
-      console.log("Google redirect success:", result.user);
-      
-      // Закрываем модальное окно
-      closeModal();
-      
-      // Запускаем post-auth процесс
-      await bootAfterAuth("google");
-      
-      toast("Успех", "Вы вошли через Google");
-    }
-  } catch (error) {
-    console.error("Google redirect error:", error);
-    
-    // Если это не ошибка отмены, показываем toast
-    if (error.code !== 'auth/popup-closed-by-user' && 
-        error.code !== 'auth/cancelled-popup-request') {
-      toast("Ошибка входа", error.message || "Не удалось войти через Google");
-    }
-  }
-}
+
+
 
 function openPasswordResetModal() {
   const body = `
@@ -894,7 +988,7 @@ async function bootAfterAuth(source) {
   }
   closeModal?.();
 
-  // 5) Показываем основной интерфейс
+  // 5) Показываем основной интерфейс без автоматического создания чата
   renderChat?.();
   
   // 6) Показываем welcome панель для новых пользователей после регистрации
@@ -907,6 +1001,8 @@ async function bootAfterAuth(source) {
     setTimeout(() => {
       if (typeof welcomePanel !== 'undefined') {
         welcomePanel.show();
+      } else {
+        showWelcomePanelDirect();
       }
     }, 500);
   }
@@ -1572,6 +1668,36 @@ async function boot() {
     
     if (user) {
       await refreshProfileSilent();
+      // загрузим первый чат или создадим
+      const list = await API.get("/api/chats");
+      
+      if (list.ok && list.chats?.length) {
+        state.activeChatId = list.chats[0].id;
+        await loadChat(state.activeChatId);
+        return;
+      }
+      
+      // Если UNAUTHORIZED и пользователь только что вошел через Google,
+      // даем backend время создать сессию и пробуем еще раз через 500ms
+      if (!list.ok && list.error === "UNAUTHORIZED" && loginTime > 0 && (Date.now() - loginTime) < 2000) {
+        console.log("Recent login detected, retrying chats load...");
+        setTimeout(async () => {
+          const retry = await API.get("/api/chats");
+          if (retry.ok && retry.chats?.length) {
+            state.activeChatId = retry.chats[0].id;
+            await loadChat(state.activeChatId);
+            return;
+          }
+          // Если и retry не сработал, создаем новый чат
+          await createNewChat();
+        }, 500);
+        return;
+      }
+      
+      if (list._silentAuthError) {
+        console.warn("Silent auth error:", list._silentAuthError);
+      }
+      await createNewChat();
     }
     
     // 2. Всегда показываем интерфейс (для авторизованных и гостей)
