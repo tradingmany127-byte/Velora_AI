@@ -7,12 +7,9 @@ class WelcomePanel {
     this.interval = null;
     this.fadeTimeout = null;
 
-    this.phrases = [
-      "Иногда всё начинается с одного спокойного шага.",
-      "Velora рядом, чтобы помочь тебе двигаться дальше.",
-      "Без спешки. Просто двигайся к своей цели.",
-      "Ты на правильном пути."
-    ];
+  this.phrases = [
+  "Спасибо, что выбрали Velora. Мы рядом."
+];
 
     this.currentPhraseIndex = 0;
   }
@@ -64,8 +61,8 @@ class WelcomePanel {
     this.textEl = this.overlay.querySelector("#welcomeText");
 
     this.attachEventListeners();
-    this.startTextAnimation();
-
+   
+    
     requestAnimationFrame(() => {
       this.overlay.classList.add("show");
     });
@@ -76,7 +73,7 @@ class WelcomePanel {
   hide(onAfterClose = null) {
     if (!this.isVisible || !this.overlay) return;
 
-    this.stopTextAnimation();
+    
 
     this.overlay.classList.remove("show");
     this.overlay.classList.add("hide");
@@ -100,7 +97,6 @@ class WelcomePanel {
   startTextAnimation() {
     if (!this.textEl) return;
 
-    this.stopTextAnimation();
     this.currentPhraseIndex = 0;
     this.textEl.textContent = this.phrases[this.currentPhraseIndex];
     this.textEl.classList.add("show");
