@@ -52,31 +52,39 @@ class WelcomePanel {
 
   // Анимация текста с цикличным показом фраз
   startTextAnimation() {
-  if (!this.textContainer) return;
+    if (!this.textContainer) return;
 
-  const texts = [
-    "Иногда всё начинается с одного спокойного шага.",
-    "Velora рядом, чтобы помочь тебе двигаться дальше.",
-    "Без спешки. Просто двигайся к своей цели.",
-    "Ты на правильном пути."
-  ];
+    const texts = [
+      "Иногда всё начинается с одного спокойного шага.",
+      "Velora рядом, чтобы помочь тебе двигаться дальше.",
+      "Без спешки. Просто двигайся к своей цели.",
+      "Ты на правильном пути."
+    ];
 
-  let index = 0;
+    let index = 0;
 
-  this.textContainer.textContent = texts[index];
-  this.textContainer.classList.add("show");
+    this.textContainer.textContent = texts[index];
+    this.textContainer.classList.add("show");
 
-  this.textInterval = setInterval(() => {
-    this.textContainer.classList.remove("show");
+    this.textInterval = setInterval(() => {
+      this.textContainer.classList.remove("show");
 
-    setTimeout(() => {
-      index = (index + 1) % texts.length;
-      this.textContainer.textContent = texts[index];
-      this.textContainer.classList.add("show");
-    }, 400);
+      setTimeout(() => {
+        index = (index + 1) % texts.length;
+        this.textContainer.textContent = texts[index];
+        this.textContainer.classList.add("show");
+      }, 400);
 
-  }, 3000);
-}
+    }, 3000);
+  }
+
+  // Остановка анимации текста
+  stopTextAnimation() {
+    if (this.textInterval) {
+      clearInterval(this.textInterval);
+      this.textInterval = null;
+    }
+  }
 
   
 
