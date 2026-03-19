@@ -34,38 +34,40 @@ async function getAuthHeaders() {
   
   return headers;
 }
+
 async function bridgeFirebaseSession() {
   const user = firebaseAuth.currentUser;
   if (!user) {
     throw new Error("No Firebase user");
   }
 
-  const token = await user.getIdToken(true);
+  const idToken = await user.getIdToken(true);
 
   const res = await fetch("/api/auth/firebase-session", {
     method: "POST",
     headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${token}`
+      "Content-Type": "application/json"
     },
-    credentials: "include"
+    credentials: "include",
+    body: JSON.stringify({ idToken })
   });
 
   const data = await res.json();
 
-  if (!res.ok || !data.ok) {
-    throw new Error(data?.error || "Failed to create backend session");
+  if (!res.ok) {
+    throw new Error(data.error || "Failed to create backend session");
   }
 
   return data;
 }
+
 const API = {
   async get(url) {
     const headers = await getAuthHeaders();
     
     const r = await fetch(url, { 
       headers,
-      credentials: "include" 
+      credentials: "include"
     });
     const data = await r.json();
     
@@ -157,7 +159,7 @@ document.addEventListener("click", (e) => {
   }
 
   // закрытие модалки
-  if (e.target.closest("[data-close='1']")) {
+  if (e.target.closest("[data-close]")) {
     closeModal?.();
   }
 
@@ -985,7 +987,7 @@ async function resetPassword() {
 async function bootAfterAuth(source) {
   if (window._bootAfterAuthCompleted) return;
   
-  // Устанавливаем время входа для retry логики
+  // Установливаем время входа для retry логики
   loginTime = Date.now();
   
   // 1) берем пользователя из Firebase
