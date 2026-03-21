@@ -34,18 +34,35 @@ app.post("/api/auth/firebase-session", async (req, res) => {
       return res.status(400).json({ error: "No token" });
     }
 
+    console.log("ID TOKEN EXISTS:", !!idToken);
+    console.log("ID TOKEN START:", String(idToken).slice(0, 40));
+
+    const parts = String(idToken).split(".");
+    console.log("TOKEN PARTS:", parts.length);
+
+    if (parts.length === 3) {
+      const payload = JSON.parse(
+        Buffer.from(parts[1], "base64url").toString("utf8")
+      );
+
+      console.log("TOKEN aud:", payload.aud);
+      console.log("TOKEN iss:", payload.iss);
+      console.log("TOKEN sub:", payload.sub);
+      console.log("TOKEN email:", payload.email);
+    }
+
     const decoded = await admin.auth().verifyIdToken(idToken);
 
     res.json({
       uid: decoded.uid,
-      email: decoded.email,
+      email: decoded.email
     });
-
   } catch (err) {
-    console.error("Session error:", err);
+    console.error("Session error FULL:", err);
     res.status(401).json({ error: "Invalid token" });
   }
 });
+
 app.get("/", (req, res) => {
   res.sendFile(path.join(publicDir, "index.html"));
 });
