@@ -34,8 +34,8 @@ app.post("/api/auth/firebase-session", async (req, res) => {
       return res.status(400).json({ error: "No token" });
     }
 
-    console.log("ID TOKEN EXISTS:", !!idToken);
-    console.log("ID TOKEN START:", String(idToken).slice(0, 40));
+    console.log("HAS TOKEN:", !!idToken);
+    console.log("TOKEN START:", String(idToken).slice(0, 30));
 
     const parts = String(idToken).split(".");
     console.log("TOKEN PARTS:", parts.length);
@@ -44,10 +44,8 @@ app.post("/api/auth/firebase-session", async (req, res) => {
       const payload = JSON.parse(
         Buffer.from(parts[1], "base64url").toString("utf8")
       );
-
       console.log("TOKEN aud:", payload.aud);
       console.log("TOKEN iss:", payload.iss);
-      console.log("TOKEN sub:", payload.sub);
       console.log("TOKEN email:", payload.email);
     }
 
@@ -55,10 +53,10 @@ app.post("/api/auth/firebase-session", async (req, res) => {
 
     res.json({
       uid: decoded.uid,
-      email: decoded.email
+      email: decoded.email,
     });
   } catch (err) {
-    console.error("Session error FULL:", err);
+    console.error("SESSION ERROR FULL:", err);
     res.status(401).json({ error: "Invalid token" });
   }
 });
@@ -91,8 +89,8 @@ function getMe(req) {
   if (!token) return null;
   const s = db.prepare("SELECT user_id FROM sessions WHERE token=?").get(token);
   if (!s) return null;
-   const u = db.prepare("SELECT id, name, email, plan, avatar_seed, verified, created_at FROM users WHERE email=?")
-  .get(firebaseUser.email || firebaseUser.user_id);
+  const u = db.prepare("SELECT id, name, email, plan, avatar_seed, verified, created_at FROM users WHERE id=?")
+    .get(s.user_id);
   if (!u) return null;
   const settings = db.prepare("SELECT tone, length, language FROM settings WHERE user_id=?").get(u.id)
     || { tone: "soft", length: "normal", language: "ru" };
