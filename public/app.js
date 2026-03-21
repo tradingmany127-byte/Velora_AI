@@ -784,17 +784,19 @@ async function loginWithGoogle() {
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
     
-    let result;
-    
     if (isMobile || isSafari) {
-      // Для мобильных и Safari используем redirect
-      await signInWithRedirect(firebaseAuth, googleProvider);
-      return; // Редирект прервет выполнение, страница перезагрузится
-    } else {
-      // Для десктопа используем popup
-      result = await signInWithPopup(firebaseAuth, googleProvider);
-    }
-await bridgeFirebaseSession();
+  await signInWithRedirect(firebaseAuth, googleProvider);
+  return;
+}
+
+const result = await signInWithPopup(firebaseAuth, googleProvider);
+
+if (!result || !result.user) {
+  throw new Error("Google user not found");
+}
+
+const idToken = await result.user.getIdToken(true);
+await bridgeFirebaseSession(idToken);
     // Обработка успешного входа (только для popup)
     if (result && result.user) {
       console.log("Google auth success:", result.user);
@@ -806,6 +808,7 @@ await bridgeFirebaseSession();
       await bootAfterAuth("google");
       
       toast("Успех", "Вы вошли через Google");
+      return;
     }
 
   } catch (error) {
@@ -846,7 +849,27 @@ await bridgeFirebaseSession();
 }
 
 // Обработка результата Google redirect для мобильных устройств
+async function handleGoogleRedirectResult() {
+  try {
+    const result = await getRedirectResult(firebaseAuth);
 
+    if (!result || !result.user) {
+      return;
+    }
+
+    const idToken = await result.user.getIdToken(true);
+    await bridgeFirebaseSession(idToken);
+
+    console.log("Google redirect success:", result.user);
+
+    closeModal();
+    await bootAfterAuth("google");
+    toast("Успех", "Вы вошли через Google");
+  } catch (error) {
+    console.error("Google redirect error:", error);
+    toast("Ошибка входа", error.message || "Не удалось завершить вход через Google");
+  }
+}
 
 
 function openPasswordResetModal() {
@@ -1970,3 +1993,4 @@ function groupChatsByDate(chats) {
   });
   return out;
 }
+handleGoogleRedirectResult();
