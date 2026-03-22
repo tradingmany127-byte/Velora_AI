@@ -1,11 +1,11 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
   getAuth,
   GoogleAuthProvider,
   sendEmailVerification,
   onAuthStateChanged,
   setPersistence,
-  browserSessionPersistence,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signInWithPopup,
@@ -26,7 +26,9 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-setPersistence(auth, browserSessionPersistence).catch(console.error);
+
+setPersistence(auth, browserLocalPersistence)
+  .catch(console.error);
 const googleProvider = new GoogleAuthProvider();
 
 export { 
@@ -37,7 +39,7 @@ export {
   sendPasswordResetEmail,
   onAuthStateChanged,
   setPersistence,
-  browserSessionPersistence,
+  
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signInWithPopup,
