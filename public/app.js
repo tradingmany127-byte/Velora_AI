@@ -796,7 +796,9 @@ if (!result || !result.user) {
 }
 
 const idToken = await result.user.getIdToken(true);
+console.log("TOKEN POPUP:", idToken);
 await bridgeFirebaseSession(idToken);
+
     // Обработка успешного входа (только для popup)
     if (result && result.user) {
       console.log("Google auth success:", result.user);
@@ -857,6 +859,7 @@ async function handleGoogleRedirectResult() {
     }
 
     const idToken = await result.user.getIdToken(true);
+    console.log("TOKEN REDIRECT:", idToken);
     await bridgeFirebaseSession(idToken);
 
     console.log("Google redirect success:", result.user);
