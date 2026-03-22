@@ -158,7 +158,7 @@ a{color:inherit}
   box-shadow:0 2px 8px rgba(0,0,0,.3);
 }
 .btn::before{
-  content:“”;
+  content:'';
   position:absolute;
   top:0;
   left:-100%;
@@ -228,7 +228,7 @@ a{color:inherit}
   overflow:hidden;
 }
 .card::before{
-  content:"";
+  content: "";
   position:absolute;
   top:0;
   left:0;
