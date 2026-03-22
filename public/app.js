@@ -1995,6 +1995,16 @@ function groupChatsByDate(chats) {
   });
   return out;
 }
-window.addEventListener("load", () => {
-  handleGoogleRedirectResult();
+window.addEventListener("load", async () => {
+  console.log("LOAD FIRED");
+  toast("LOAD", "страница загрузилась");
+
+  try {
+    await handleGoogleRedirectResult();
+    console.log("HANDLE REDIRECT CALLED");
+    toast("REDIRECT", "handleGoogleRedirectResult вызван");
+  } catch (e) {
+    console.error("HANDLE REDIRECT FAIL:", e);
+    toast("REDIRECT ERR", e?.message || "ошибка");
+  }
 });
