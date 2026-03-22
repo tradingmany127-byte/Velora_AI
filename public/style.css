@@ -1498,7 +1498,7 @@ min-height: 0;
 .message-wrapper {
   display: flex;
   max-width: 100%;
-  animation: messageSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: messageSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .message-wrapper.me {
