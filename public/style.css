@@ -228,7 +228,7 @@ a{color:inherit}
   overflow:hidden;
 }
 .card::before{
-  content: '';
+  content: "";
   position:absolute;
   top:0;
   left:0;
@@ -1582,10 +1582,10 @@ select.input {
 /* Mobile Responsive */
 @media (max-width: 768px) {
   .chatInputWrapper {
-    padding: 0 16px;
-    gap: 10px;
+    gap: 8px;
+    padding: 8px 10px;
   }
-  
+
   .chatInput {
     height: 44px;
     font-size: 15px;
@@ -1602,12 +1602,6 @@ select.input {
 
 .chatInputContainer {
   margin-top: 18px;
-}
-
-.chatInputWrapper {
-  display: flex;
-  align-items: center;
-  gap: 10px;
   width: 100%;
   padding: 10px 12px;
   border-radius: 22px;
