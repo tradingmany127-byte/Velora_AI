@@ -1,8 +1,9 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+;
 import {
   getAuth,
   GoogleAuthProvider,
+  browserLocalPersistence,
   sendEmailVerification,
   onAuthStateChanged,
   setPersistence,
