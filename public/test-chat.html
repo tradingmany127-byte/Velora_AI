@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Test</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body style="padding: 20px;">
+    
+    <div class="card chatWrap" style="height: 600px;">
+        <div class="chatLog" id="chatLog">
+            <div class="message-wrapper ai">
+                <div class="bubble ai">Привет! Я Velora AI. Чем могу помочь?</div>
+            </div>
+            <div class="message-wrapper me">
+                <div class="bubble me">Привет! Расскажи о себе</div>
+            </div>
+            <div class="message-wrapper ai">
+                <div class="bubble ai">Я - современный AI ассистент с премиальным интерфейсом!</div>
+            </div>
+        </div>
+        
+        <div class="chatInputContainer">
+            <div class="chatInputWrapper">
+                <input id="chatInput" class="chatInput" placeholder="Напиши сообщение…" />
+                <button class="voiceBtn" id="voiceBtn" type="button">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                        <line x1="12" y1="19" x2="12" y2="23"></line>
+                        <line x1="8" y1="23" x2="16" y2="23"></line>
+                    </svg>
+                </button>
+                <button class="sendBtn" id="sendBtn" type="button">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22,2 15,22 11,13 2,9 22,2"></polygon>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
