@@ -854,6 +854,13 @@ await bridgeFirebaseSession(idToken);
 async function handleGoogleRedirectResult() {
   try {
     const result = await getRedirectResult(firebaseAuth);
+
+    console.log("STEP 1 RESULT:", result);
+    toast("STEP 1", result?.user ? "есть user" : "НЕТ USER");
+
+    console.log("CUR USER:", firebaseAuth.currentUser);
+    toast("CUR USER", firebaseAuth.currentUser ? "есть currentUser" : "НЕТ currentUser");
+
     if (!result || !result.user) {
       return;
     }
