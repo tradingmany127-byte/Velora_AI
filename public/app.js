@@ -3,8 +3,6 @@ import {
   firebaseAuth, 
   googleProvider,
   onAuthStateChanged,
-  setPersistence,
-  browserSessionPersistence,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signInWithPopup,
