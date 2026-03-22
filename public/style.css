@@ -1369,75 +1369,79 @@ select.input {
 }
 
 .chatInputWrapper {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 0 20px;
 }
 
 /* Premium Chat Input */
 .chatInput {
   flex: 1;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid var(--stroke);
-  border-radius: 20px;
-  padding: 14px 20px;
-  color: var(--text);
-  font-size: 15px;
-  font-family: inherit;
+  height: 48px;
+  border: none;
   outline: none;
+  border-radius: 16px;
+  padding: 0 18px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  font-size: 16px;
+  box-sizing: border-box;
   transition: var(--transition);
-  backdrop-filter: blur(10px);
 }
 
 .chatInput::placeholder {
-  color: var(--muted2);
+  color: rgba(255, 255, 255, 0.5);
 }
 
 .chatInput:focus {
-  border-color: var(--accent);
   background: rgba(255, 255, 255, 0.08);
-  box-shadow: 
-    0 0 0 3px rgba(139, 107, 255, 0.1),
-    0 4px 20px rgba(139, 107, 255, 0.15);
+  box-shadow: 0 0 0 2px rgba(139, 107, 255, 0.2);
 }
 
 /* Voice Button */
 .voiceBtn {
   width: 48px;
   height: 48px;
+  min-width: 48px;
+  border: none;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid var(--stroke);
-  color: var(--muted);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: var(--transition);
-  backdrop-filter: blur(10px);
+  padding: 0;
+  color: #fff;
   flex-shrink: 0;
+  transition: transform 0.15s ease, opacity 0.15s ease, background 0.2s ease;
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .voiceBtn:hover {
   background: rgba(255, 255, 255, 0.12);
-  border-color: var(--accent);
-  color: var(--accent);
   transform: scale(1.05);
-  box-shadow: 0 0 20px rgba(139, 107, 255, 0.2);
+}
+
+.voiceBtn svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
 }
 
 .voiceBtn.recording {
   background: rgba(255, 71, 87, 0.15);
-  border-color: var(--danger);
-  color: var(--danger);
   animation: voiceRecording 1.5s ease-in-out infinite;
 }
 
 @keyframes voiceRecording {
   0%, 100% {
     transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(255, 71, 87, 0.4);
   }
   50% {
     transform: scale(1.1);
@@ -1449,37 +1453,29 @@ select.input {
 .sendBtn {
   width: 48px;
   height: 48px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  min-width: 48px;
   border: none;
-  color: white;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: var(--transition);
+  padding: 0;
+  color: #fff;
   flex-shrink: 0;
-  box-shadow: 
-    0 4px 16px rgba(139, 107, 255, 0.3),
-    0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+  transition: transform 0.15s ease, opacity 0.15s ease, background 0.2s ease;
+  background: linear-gradient(135deg, #7b61ff, #5ea8ff);
+  box-shadow: 0 8px 24px rgba(94, 168, 255, 0.22);
 }
 
 .sendBtn:hover {
-  transform: translateY(-2px) scale(1.05);
-  box-shadow: 
-    0 8px 24px rgba(139, 107, 255, 0.4),
-    0 0 30px rgba(139, 107, 255, 0.2),
-    0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+  transform: scale(1.05);
 }
 
-.sendBtn:active {
-  transform: translateY(-1px) scale(1.02);
-}
-
-.sendBtn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
+.sendBtn svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
 }
 
 /* Enhanced Chat Log */
@@ -1581,46 +1577,25 @@ select.input {
 
 /* Mobile Responsive */
 @media (max-width: 768px) {
+  .chatInputContainer {
+    margin-top: 18px;
+  }
+
   .chatInputWrapper {
-    padding: 0 16px;
-    gap: 10px;
+    gap: 8px;
+    padding: 8px 10px;
   }
-  
+
   .chatInput {
-    padding: 12px 16px;
-    font-size: 16px; /* Prevents zoom on iOS */
+    height: 44px;
+    font-size: 15px;
+    padding: 0 14px;
   }
-  
-  .voiceBtn, .sendBtn {
+
+  .voiceBtn,
+  .sendBtn {
     width: 44px;
     height: 44px;
-  }
-  
-  .bubble {
-    max-width: 90%;
-    padding: 14px 18px;
-    font-size: 14px;
-  }
-  
-  .chatLog {
-    padding: 16px 12px;
-    gap: 12px;
-  }
-}
-
-@media (max-width: 480px) {
-  .bubble {
-    max-width: 95%;
-    padding: 12px 16px;
-  }
-  
-  .voiceBtn, .sendBtn {
-    width: 40px;
-    height: 40px;
-  }
-  
-  .voiceBtn svg, .sendBtn svg {
-    width: 18px;
-    height: 18px;
+    min-width: 44px;
   }
 }
