@@ -235,9 +235,24 @@ function renderChat() {
 
           <div class="chatLog" id="chatLog"></div>
 
-          <div class="chatBox">
-            <input id="chatInput" class="input" placeholder="Напиши сообщение…" />
-            <button class="btn primary" id="sendBtn">Отправить</button>
+          <div class="chatInputContainer">
+            <div class="chatInputWrapper">
+              <input id="chatInput" class="chatInput" placeholder="Напиши сообщение…" />
+              <button class="voiceBtn" id="voiceBtn" type="button">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                  <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                  <line x1="12" y1="19" x2="12" y2="23"></line>
+                  <line x1="8" y1="23" x2="16" y2="23"></line>
+                </svg>
+              </button>
+              <button class="sendBtn" id="sendBtn" type="button">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="22" y1="2" x2="11" y2="13"></line>
+                  <polygon points="22,2 15,22 11,13 2,9 22,2"></polygon>
+                </svg>
+              </button>
+            </div>
           </div>
 
           ${state.user ? `
@@ -282,10 +297,28 @@ function renderChat() {
   // send
   const input = document.getElementById("chatInput");
   const sendBtn = document.getElementById("sendBtn");
+  const voiceBtn = document.getElementById("voiceBtn");
+  
   if (sendBtn) sendBtn.onclick = () => sendMessage(input?.value || "");
   if (input) input.onkeydown = (e) => {
     if (e.key === "Enter") sendMessage(input?.value || "");
   };
+  
+  // Voice button handler (placeholder for future implementation)
+  if (voiceBtn) {
+    voiceBtn.onclick = () => {
+      // Placeholder for voice functionality
+      voiceBtn.classList.toggle('recording');
+      if (voiceBtn.classList.contains('recording')) {
+        toast("Голосовая запись", "Началась запись голоса...");
+        // TODO: Implement actual voice recording
+        setTimeout(() => {
+          voiceBtn.classList.remove('recording');
+          toast("Голосовая запись", "Запись остановлена");
+        }, 2000);
+      }
+    };
+  }
 
   renderMessages();
 }
@@ -307,10 +340,15 @@ function renderMessages() {
   msgs.forEach(m => addBubble(m.content, m.role === "user" ? "me" : "ai"));
 
   function addBubble(text, who) {
-    const div = document.createElement("div");
-    div.className = `bubble ${who}`;
-    div.textContent = text;
-    log.appendChild(div);
+    const messageDiv = document.createElement("div");
+    messageDiv.className = `message-wrapper ${who}`;
+    
+    const bubbleDiv = document.createElement("div");
+    bubbleDiv.className = `bubble ${who}`;
+    bubbleDiv.textContent = text;
+    
+    messageDiv.appendChild(bubbleDiv);
+    log.appendChild(messageDiv);
     log.scrollTop = log.scrollHeight;
   }
 }
