@@ -852,16 +852,13 @@ await bridgeFirebaseSession(idToken);
 async function handleGoogleRedirectResult() {
   try {
     const result = await getRedirectResult(firebaseAuth);
-console.log("STEP 1 RESULT:", result);
-toast("STEP 1", result?.user ? "есть user" : "НЕТ USER");
     if (!result || !result.user) {
       return;
     }
 
     const idToken = await result.user.getIdToken(true);
     await bridgeFirebaseSession(idToken);
-console.log("STEP 1 RESULT:", result);
-toast("STEP 1", result?.user ? "есть user" : "НЕТ USER");
+
     console.log("Google redirect success:", result.user);
 
     closeModal();
@@ -1995,4 +1992,6 @@ function groupChatsByDate(chats) {
   });
   return out;
 }
-handleGoogleRedirectResult();
+window.addEventListener("load", () => {
+  handleGoogleRedirectResult();
+});
