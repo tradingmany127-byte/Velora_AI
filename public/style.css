@@ -1375,23 +1375,24 @@ select.input {
 .chatInputWrapper {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 0 20px;
+  gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 /* Premium Chat Input */
 .chatInput {
   flex: 1;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid var(--stroke);
-  border-radius: 20px;
-  padding: 14px 20px;
-  color: var(--text);
-  font-size: 15px;
-  font-family: inherit;
+  min-width: 0;
+  height: 46px;
+  border: none;
   outline: none;
-  transition: var(--transition);
-  backdrop-filter: blur(10px);
+  border-radius: 18px;
+  padding: 0 16px;
+  background: rgba(255, 255, 255, 0.055);
+  color: #fff;
+  font-size: 15px;
+  box-sizing: border-box;
 }
 
 .chatInput::placeholder {
@@ -1525,16 +1526,16 @@ select.input {
 
 /* Enhanced Bubbles */
 .bubble {
-  max-width: 85%;
-  padding: 16px 20px;
+  max-width: 78%;
+  padding: 14px 16px;
   border-radius: 20px;
   word-wrap: break-word;
   white-space: pre-wrap;
-  backdrop-filter: blur(20px);
+  backdrop-filter: blur(14px);
   border: 1px solid var(--stroke);
   position: relative;
-  font-size: 15px;
-  line-height: 1.5;
+  font-size: 14px;
+  line-height: 1.45;
   transition: var(--transition);
 }
 
@@ -1545,15 +1546,16 @@ select.input {
 
 /* User Messages */
 .bubble.me {
-  background: linear-gradient(135deg, 
-    rgba(139, 107, 255, 0.2), 
-    rgba(61, 212, 229, 0.1)
+  background: linear-gradient(
+    135deg,
+    rgba(139, 107, 255, 0.16),
+    rgba(97, 212, 229, 0.08)
   );
-  border-color: rgba(139, 107, 255, 0.3);
+  border-color: rgba(139, 107, 255, 0.22);
   color: var(--text);
-  box-shadow: 
-    0 4px 20px rgba(139, 107, 255, 0.15),
-    0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+  box-shadow:
+    0 3px 14px rgba(139, 107, 255, 0.10),
+    0 0 0 1px rgba(255, 255, 255, 0.04) inset;
 }
 
 .bubble.me:hover {
@@ -1565,15 +1567,12 @@ select.input {
 
 /* AI Messages */
 .bubble.ai {
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.06), 
-    rgba(255, 255, 255, 0.03)
-  );
-  border-color: var(--stroke);
+  background: rgba(255, 255, 255, 0.045);
+  border-color: rgba(255, 255, 255, 0.08);
   color: var(--text);
-  box-shadow: 
-    0 2px 16px rgba(0, 0, 0, 0.2),
-    0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+  box-shadow:
+    0 3px 14px rgba(0, 0, 0, 0.12),
+    0 0 0 1px rgba(255, 255, 255, 0.03) inset;
 }
 
 .bubble.ai:hover {
@@ -1598,25 +1597,34 @@ select.input {
 
   .voiceBtn,
   .sendBtn {
-    width: 44px;
-    height: 44px;
-    min-width: 44px;
+    width: 46px;
+    height: 46px;
+    min-width: 46px;
+    flex-shrink: 0;
+    border: none;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    cursor: pointer;
   }
 }
 
 .chatInputContainer {
   position: absolute;
-  left: 16px;
-  right: 16px;
-  bottom: 16px;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
 
   width: auto;
-  padding: 10px 12px;
-  border-radius: 22px;
-  background: rgba(255, 255, 255, 0.04);
+  padding: 8px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.035);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(12px);
+  backdrop-filter: blur(14px);
   box-sizing: border-box;
+  overflow: hidden;
 }
 
 .chatInput {
@@ -1654,7 +1662,12 @@ select.input {
 }
 
 .voiceBtn {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.sendBtn {
+  background: linear-gradient(135deg, #7b61ff, #6ea8ff);
+  box-shadow: 0 4px 18px rgba(110, 168, 255, 0.22);
 }
 
 .sendBtn {
@@ -1672,4 +1685,39 @@ select.input {
   width: 20px;
   height: 20px;
   stroke: currentColor;
+}
+@media (max-width: 768px) {
+  .chatInputContainer {
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    padding: 7px;
+    border-radius: 22px;
+  }
+
+  .chatInputWrapper {
+    gap: 6px;
+  }
+
+  .chatInput {
+    height: 42px;
+    padding: 0 14px;
+    font-size: 15px;
+    border-radius: 16px;
+  }
+
+  .voiceBtn,
+  .sendBtn {
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+  }
+
+  .bubble {
+    max-width: 84%;
+    padding: 12px 14px;
+    font-size: 14px;
+    line-height: 1.4;
+    border-radius: 18px;
+  }
 }
