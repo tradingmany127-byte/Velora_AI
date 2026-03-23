@@ -1726,3 +1726,155 @@ select.input {
     border-radius: 18px;
   }
 }
+.voiceOverlay {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 12px 14px;
+  border-radius: 20px;
+  background: rgba(15, 15, 25, 0.82);
+  border: 1px solid rgba(255,255,255,0.06);
+  backdrop-filter: blur(18px);
+  box-sizing: border-box;
+}
+
+.voiceOverlay.hidden {
+  display: none;
+}
+
+.voiceStopBtn {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.voiceStopDot {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  background: #ff5f57;
+  box-shadow: 0 0 12px rgba(255,95,87,0.35);
+}
+
+.voiceOverlayCenter {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  flex: 1;
+}
+
+.voicePulseWrap {
+  position: relative;
+  width: 50px;
+  height: 50px;
+  min-width: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.voiceMicCore {
+  position: relative;
+  z-index: 3;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #7b61ff, #6ea8ff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  box-shadow: 0 6px 18px rgba(110,168,255,0.24);
+}
+
+.voicePulse {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(110,168,255,0.35);
+  animation: voicePulseAnim 1.8s infinite ease-out;
+  z-index: 1;
+}
+
+.voicePulse.delay1 { animation-delay: 0.45s; }
+.voicePulse.delay2 { animation-delay: 0.9s; }
+
+@keyframes voicePulseAnim {
+  0% {
+    transform: scale(0.78);
+    opacity: 0.85;
+  }
+  100% {
+    transform: scale(1.55);
+    opacity: 0;
+  }
+}
+
+.voiceOverlayText {
+  min-width: 0;
+  flex: 1;
+}
+
+.voiceOverlayTitle {
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.voiceLiveText {
+  color: rgba(255,255,255,0.65);
+  font-size: 13px;
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.voiceBtn.recording {
+  box-shadow: 0 0 0 3px rgba(123, 97, 255, 0.16);
+}
+
+@media (max-width: 768px) {
+  .voiceOverlay {
+    padding: 10px 12px;
+    border-radius: 18px;
+    gap: 10px;
+  }
+
+  .voiceStopBtn {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+  }
+
+  .voicePulseWrap {
+    width: 46px;
+    height: 46px;
+    min-width: 46px;
+  }
+
+  .voiceMicCore {
+    width: 38px;
+    height: 38px;
+  }
+
+  .voiceOverlayTitle {
+    font-size: 13px;
+  }
+
+  .voiceLiveText {
+    font-size: 12px;
+  }
+}

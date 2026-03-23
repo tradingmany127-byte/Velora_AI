@@ -236,6 +236,25 @@ function renderChat() {
           <div class="chatLog" id="chatLog"></div>
 
           <div class="chatInputContainer">
+          <div id="voiceOverlay" class="voiceOverlay hidden">
+  <button id="voiceStopBtn" class="voiceStopBtn" type="button" aria-label="Остановить запись">
+    <span class="voiceStopDot"></span>
+  </button>
+
+  <div class="voiceOverlayCenter">
+    <div class="voicePulseWrap">
+      <div class="voicePulse"></div>
+      <div class="voicePulse delay1"></div>
+      <div class="voicePulse delay2"></div>
+      <div class="voiceMicCore">🎤</div>
+    </div>
+
+    <div class="voiceOverlayText">
+      <div class="voiceOverlayTitle">Слушаю…</div>
+      <div id="voiceLiveText" class="voiceLiveText">Говори, я преобразую речь в текст</div>
+    </div>
+  </div>
+</div>
             <div class="chatInputWrapper">
               <input id="chatInput" class="chatInput" placeholder="Напиши сообщение…" />
               <button class="voiceBtn" id="voiceBtn" type="button">
@@ -298,6 +317,120 @@ function renderChat() {
   const input = document.getElementById("chatInput");
   const sendBtn = document.getElementById("sendBtn");
   const voiceBtn = document.getElementById("voiceBtn");
+  const voiceOverlay = document.getElementById("voiceOverlay");
+const voiceStopBtn = document.getElementById("voiceStopBtn");
+const voiceLiveText = document.getElementById("voiceLiveText");
+
+let recognition = null;
+let isRecording = false;
+let finalVoiceText = "";
+let interimVoiceText = "";
+
+function showVoiceOverlay() {
+  voiceOverlay?.classList.remove("hidden");
+}
+
+function hideVoiceOverlay() {
+  voiceOverlay?.classList.add("hidden");
+}
+
+function resetVoiceState() {
+  finalVoiceText = "";
+  interimVoiceText = "";
+  if (voiceLiveText) {
+    voiceLiveText.textContent = "Говори, я преобразую речь в текст";
+  }
+}
+
+function setupVoiceInput() {
+  const SpeechRecognition =
+    window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  if (!SpeechRecognition) {
+    console.warn("Speech recognition is not supported in this browser");
+    if (voiceBtn) {
+      voiceBtn.style.opacity = "0.5";
+      voiceBtn.title = "Голосовой ввод не поддерживается";
+    }
+    return;
+  }
+
+  recognition = new SpeechRecognition();
+  recognition.lang = "ru-RU";
+  recognition.continuous = true;
+  recognition.interimResults = true;
+  recognition.maxAlternatives = 1;
+
+  recognition.onstart = () => {
+    isRecording = true;
+    resetVoiceState();
+    showVoiceOverlay();
+    voiceBtn?.classList.add("recording");
+  };
+
+  recognition.onresult = (event) => {
+    interimVoiceText = "";
+
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      const text = event.results[i][0].transcript.trim();
+
+      if (event.results[i].isFinal) {
+        finalVoiceText += (finalVoiceText ? " " : "") + text;
+      } else {
+        interimVoiceText += (interimVoiceText ? " " : "") + text;
+      }
+    }
+
+    const preview = (finalVoiceText + " " + interimVoiceText).trim();
+    if (voiceLiveText) {
+      voiceLiveText.textContent = preview || "Слушаю...";
+    }
+  };
+
+  recognition.onerror = (event) => {
+    console.error("Voice recognition error:", event.error);
+    isRecording = false;
+    voiceBtn?.classList.remove("recording");
+    hideVoiceOverlay();
+  };
+
+  recognition.onend = () => {
+    isRecording = false;
+    voiceBtn?.classList.remove("recording");
+  };
+
+  voiceBtn?.addEventListener("click", () => {
+    if (!recognition || isRecording) return;
+
+    try {
+      recognition.start();
+    } catch (err) {
+      console.error("Recognition start error:", err);
+    }
+  });
+
+  voiceStopBtn?.addEventListener("click", () => {
+    if (!recognition) return;
+
+    if (isRecording) {
+      recognition.stop();
+    }
+
+    const text = (finalVoiceText || interimVoiceText).trim();
+
+    if (input && text) {
+      input.value = text;
+      input.focus();
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+
+    setTimeout(() => {
+      hideVoiceOverlay();
+    }, 120);
+  });
+}
+
+setupVoiceInput();
   
   if (sendBtn) sendBtn.onclick = () => sendMessage(input?.value || "");
   if (input) input.onkeydown = (e) => {
