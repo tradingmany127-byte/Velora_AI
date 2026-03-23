@@ -321,9 +321,10 @@ textarea{min-height:90px; resize:vertical}
 
 .chatWrap{
   height: calc(100vh - 140px);
-  min-height:520px;
+  min-height: 520px;
+  display: flex;
+  flex-direction: column;
 }
-
 .modeBar{
   display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;
 }
