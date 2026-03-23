@@ -321,7 +321,9 @@ textarea{min-height:90px; resize:vertical}
 
 .chatWrap{
   height: calc(100vh - 140px);
-  min-height:520px;
+  min-height: 520px;
+  position: relative;
+  padding-bottom: 110px;
 }
 .modeBar{
   display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;
@@ -1603,8 +1605,12 @@ select.input {
 }
 
 .chatInputContainer {
-  margin-top: auto;
-  width: 100%;
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 16px;
+
+  width: auto;
   padding: 10px 12px;
   border-radius: 22px;
   background: rgba(255, 255, 255, 0.04);
