@@ -231,11 +231,11 @@ function renderChat() {
             <div class="modeBtn ${state.activeMode==="pro"?"active":""}" data-mode="pro">Velora Pro</div>
           </div>
 
-          <div class="hr"></div>
-
           <div class="chatLog" id="chatLog"></div>
 
-          <div class="chatInputContainer">
+<div class="chatInputContainer">
+          <div class="hr"></div>
+
           <div id="voiceOverlay" class="voiceOverlay hidden">
   <button id="voiceStopBtn" class="voiceStopBtn" type="button" aria-label="Остановить запись">
     <span class="voiceStopDot"></span>
@@ -250,8 +250,11 @@ function renderChat() {
     </div>
 
     <div class="voiceOverlayText">
-      <div class="voiceOverlayTitle">Слушаю…</div>
+      <div class="voiceOverlayTitle">Слушаю...</div>
       <div id="voiceLiveText" class="voiceLiveText">Говори, я преобразую речь в текст</div>
+    </div>
+  </div>
+</div>
     </div>
   </div>
 </div>
@@ -438,20 +441,7 @@ setupVoiceInput();
   };
   
   // Voice button handler (placeholder for future implementation)
-  if (voiceBtn) {
-    voiceBtn.onclick = () => {
-      // Placeholder for voice functionality
-      voiceBtn.classList.toggle('recording');
-      if (voiceBtn.classList.contains('recording')) {
-        toast("Голосовая запись", "Началась запись голоса...");
-        // TODO: Implement actual voice recording
-        setTimeout(() => {
-          voiceBtn.classList.remove('recording');
-          toast("Голосовая запись", "Запись остановлена");
-        }, 2000);
-      }
-    };
-  }
+  
 
   renderMessages();
 }
